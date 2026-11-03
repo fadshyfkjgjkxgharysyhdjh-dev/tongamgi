@@ -168,7 +168,7 @@ audio{width:100%}
 
   <div class="lessonbar">
     <div class="now"><div class="label">지금 연습 중</div><b id="curTitle">예시 대화</b><div class="sub" id="curSub"></div></div>
-    <div class="row"><button id="toggleSet" aria-label="설정">⚙ 설정</button><button id="toggleNotes">문법 노트</button><button id="toggleLib" class="primary">수업 목록</button></div>
+    <div class="row"><span class="status" id="syncBadge" hidden></span><button id="toggleSet" aria-label="설정">⚙ 설정</button><button id="toggleNotes">문법 노트</button><button id="toggleLib" class="primary">수업 목록</button></div>
   </div>
 
   <p class="notice" id="keyBanner" hidden>AI 기능(검토, 한국어 대본, 핵심 구문, 질문, Gemini 받아쓰기)을 쓰려면 <b>⚙ 설정</b>에서 Gemini API 키를 넣어 주세요. 키가 없어도 대본 연습과 브라우저 음성 인식은 쓸 수 있습니다.</p>
@@ -190,6 +190,15 @@ audio{width:100%}
     <p class="hint">질문 칸의 🎙는 한국어와 영어가 섞이므로 항상 Gemini로 받아씁니다.</p>
     <h3>오늘 AI 사용</h3>
     <p id="usageTxt" style="margin:0"></p>
+    <h3>기기 간 동기화</h3>
+    <p class="hint">GitHub 계정의 비공개 저장 공간(Gist)에 수업·진행 상황·문법 노트를 저장해서 휴대폰과 PC를 자동으로 맞춥니다. 처음 한 번, 기기마다 같은 토큰을 넣어 주세요.</p>
+    <ol class="hint" style="margin:0;padding-left:18px">
+      <li><a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=tongamgi-sync" target="_blank" rel="noopener">토큰 만들기 페이지</a>를 엽니다(GitHub 로그인).</li>
+      <li>Expiration을 <b>No expiration</b>으로 고르고, 체크된 항목이 <b>gist</b> 하나인지 확인한 뒤 맨 아래 <b>Generate token</b>을 누릅니다.</li>
+      <li><code>ghp_</code>로 시작하는 토큰을 복사해 아래에 붙여넣고 '연결'을 누릅니다. 다른 기기에도 같은 토큰을 넣으면 됩니다.</li>
+    </ol>
+    <div class="row" style="flex-wrap:nowrap"><input type="password" id="syncTok" placeholder="ghp_로 시작하는 토큰" autocomplete="off" spellcheck="false"><button id="syncSave" class="primary">연결</button></div>
+    <div class="row"><button id="syncNow">지금 동기화</button><button id="syncOff" class="ghost danger">연결 끊기</button><span class="status" id="syncStatus"></span></div>
     <h3>데이터 옮기기</h3>
     <p class="hint">수업과 문법 노트는 이 기기의 브라우저에 저장됩니다. 백업하거나 다른 기기로 옮길 때 파일로 내보낸 뒤 가져오세요. Claude 연습장에서 내보낸 파일도 가져올 수 있습니다.</p>
     <div class="row"><button id="expBtn">내보내기</button><label class="btn" for="impFile" tabindex="0">가져오기</label><input type="file" id="impFile" accept="application/json,.json" hidden></div>
@@ -453,20 +462,71 @@ const Lib={db:null,uid:null,items:{},
       if(db&&user){const uid=await user.id();if(uid){this.db=db;this.uid=uid}}}}catch(e){}
     if(this.db){try{const snap=await this.col().get();snap.docs.forEach(d=>{const v=d.data();if(!v)return;if(d.id==="_state")this.state=v;else if(v.src)this.items[d.id]=v})}catch(e){this.db=null}}
     if(!this.db){this.items=local.get("lessons")||{}}
-    $("#storeNote").textContent="저장한 수업은 이 기기의 브라우저에 보관됩니다. 다른 기기로 옮길 때는 ⚙ 설정의 내보내기를 쓰세요.";
+    $("#storeNote").textContent=local.get("syncTok")?"저장한 수업은 GitHub 동기화로 다른 기기와 맞춰집니다.":"저장한 수업은 이 기기에 보관됩니다. 휴대폰과 PC를 맞추려면 ⚙ 설정에서 동기화를 연결하세요.";
   },
   col(){return this.db.collection("data/users/"+this.uid)},
-  async save(L){L.updated=Date.now();this.items[L.id]=JSON.parse(JSON.stringify(L));
+  async save(L){L.updated=Date.now();this.items[L.id]=JSON.parse(JSON.stringify(L));Sync.soon();
     if(this.db){try{await this.col().doc(L.id).set(this.items[L.id])}catch(e){local.set("lessons",this.items)}}else local.set("lessons",this.items)},
-  async remove(id){delete this.items[id];if(this.db){try{await this.col().doc(id).delete()}catch(e){}}else local.set("lessons",this.items)}
+  async remove(id){delete this.items[id];Sync.tomb("l",id);if(this.db){try{await this.col().doc(id).delete()}catch(e){}}else local.set("lessons",this.items)}
 };
 
 /* ---------- notebook store ---------- */
 const Notes={items:{},
   col(){return Lib.db.doc("data/users/"+Lib.uid+"/notebook").collection("notes")},
   async init(){if(Lib.db){try{const s=await this.col().get();s.docs.forEach(d=>{const v=d.data();if(v)this.items[d.id]=v});return}catch(e){}}this.items=local.get("notes")||{}},
-  async save(n){this.items[n.id]=n;if(Lib.db){try{await this.col().doc(n.id).set(n);return}catch(e){}}local.set("notes",this.items)},
-  async remove(id){delete this.items[id];if(Lib.db){try{await this.col().doc(id).delete();return}catch(e){}}local.set("notes",this.items)}};
+  async save(n){this.items[n.id]=n;Sync.soon();if(Lib.db){try{await this.col().doc(n.id).set(n);return}catch(e){}}local.set("notes",this.items)},
+  async remove(id){delete this.items[id];Sync.tomb("n",id);if(Lib.db){try{await this.col().doc(id).delete();return}catch(e){}}local.set("notes",this.items)}};
+/* ---------- GitHub Gist sync ---------- */
+const Sync={busy:false,t:null,FILE:"tongamgi.json",DESC:"tongamgi-sync (통암기 대화 연습장 동기화 데이터)",
+  get tok(){return local.get("syncTok")||""},get gid(){return local.get("syncGist")||""},
+  tombs(){return local.get("tombs")||{l:{},n:{}}},
+  tomb(k,id){const t=this.tombs();t[k][id]=Date.now();local.set("tombs",t);this.soon()},
+  api(path,opt={}){return fetch("https://api.github.com"+path,{...opt,headers:{"Accept":"application/vnd.github+json","Authorization":"Bearer "+this.tok,...(opt.body?{"Content-Type":"application/json"}:{})}})},
+  status(msg,ok){$("#syncStatus").textContent=msg;const b=$("#syncBadge");b.hidden=!this.tok;if(ok!==undefined)b.textContent=ok?"☁ "+msg.replace(/\.$/,""):"⚠ 동기화 안 됨"},
+  async find(){const r=await this.api("/gists?per_page=100");if(r.status===401)throw{code:"auth"};if(!r.ok)throw{code:"net"};
+    const g=(await r.json()).find(x=>x.files&&x.files[this.FILE]&&String(x.description||"").startsWith("tongamgi-sync"));return g?g.id:""},
+  async create(content){const r=await this.api("/gists",{method:"POST",body:JSON.stringify({description:this.DESC,public:false,files:{[this.FILE]:{content}}})});
+    if(r.status===401)throw{code:"auth"};if(!r.ok)throw{code:"net"};return(await r.json()).id},
+  async pull(){const r=await this.api("/gists/"+this.gid);if(r.status===401)throw{code:"auth"};if(r.status===404)throw{code:"gone"};if(!r.ok)throw{code:"net"};
+    const f=(await r.json()).files[this.FILE];if(!f)return null;let txt=f.content;
+    if(f.truncated&&f.raw_url){const rr=await fetch(f.raw_url);txt=await rr.text()}try{return JSON.parse(txt)}catch(e){return null}},
+  local(){return{app:"tongamgi",version:1,saved:Date.now(),lessons:Lib.items,notes:Notes.items,tombs:this.tombs()}},
+  merge(remote){
+    if(!remote)return{changed:false,needPush:true};
+    const lt=this.tombs(),rt=remote.tombs||{l:{},n:{}},tombs={l:{...rt.l,...lt.l},n:{...rt.n,...lt.n}};
+    for(const k of["l","n"])for(const id in rt[k]||{})tombs[k][id]=Math.max(rt[k][id]||0,lt[k][id]||0);
+    local.set("tombs",tombs);
+    let changed=false,needPush=false;const stamp=x=>Math.max(x.updated||0,(x.progress&&x.progress.t)||0);
+    const lessons={...Lib.items};
+    for(const [id,x] of Object.entries(remote.lessons||{})){if(!x||!x.src)continue;const cur=lessons[id];if(!cur||stamp(x)>stamp(cur)){lessons[id]=x;changed=true}}
+    for(const [id,x] of Object.entries(lessons)){const rx=(remote.lessons||{})[id];if(!rx||stamp(x)>stamp(rx))needPush=true;
+      if(tombs.l[id]&&tombs.l[id]>=stamp(x)){delete lessons[id];changed=true;needPush=true}}
+    const notes={...Notes.items};
+    for(const [id,x] of Object.entries(remote.notes||{})){if(x&&!notes[id]){notes[id]=x;changed=true}}
+    for(const [id,x] of Object.entries(notes)){if(!(remote.notes||{})[id])needPush=true;if(tombs.n[id]){delete notes[id];changed=true;needPush=true}}
+    for(const k of["l","n"])for(const id in lt[k])if(!(rt[k]||{})[id])needPush=true;
+    Lib.items=lessons;Notes.items=notes;local.set("lessons",lessons);local.set("notes",notes);
+    return{changed,needPush}},
+  async run(why){
+    if(!this.tok||this.busy)return;this.busy=true;clearTimeout(this.t);
+    try{
+      if(!this.gid){const id=await this.find();if(id)local.set("syncGist",id);else{local.set("syncGist",await this.create(JSON.stringify(this.local())));this.done();return}}
+      let remote;try{remote=await this.pull()}catch(e){if(e.code==="gone"){local.set("syncGist","");this.busy=false;return this.run(why)}throw e}
+      const curId=L&&!L.example?L.id:null,before=curId&&Lib.items[curId]?JSON.stringify(Lib.items[curId]):null;
+      const {changed,needPush}=this.merge(remote);
+      if(changed){renderMine();renderCatalog();renderNotes();
+        const ids=Object.keys(Lib.items);
+        if(curId&&!Lib.items[curId])openLesson(ids.length?JSON.parse(JSON.stringify(Lib.items[ids[0]])):example());
+        else if(curId&&JSON.stringify(Lib.items[curId])!==before&&why!=="push")openLesson(JSON.parse(JSON.stringify(Lib.items[curId])));
+        else if(!curId&&ids.length&&why==="open"){const best=ids.sort((a,b)=>((Lib.items[b].progress||{}).t||Lib.items[b].updated||0)-((Lib.items[a].progress||{}).t||Lib.items[a].updated||0))[0];openLesson(JSON.parse(JSON.stringify(Lib.items[best])))}}
+      if(needPush){const r=await this.api("/gists/"+this.gid,{method:"PATCH",body:JSON.stringify({files:{[this.FILE]:{content:JSON.stringify(this.local())}}})});
+        if(r.status===401)throw{code:"auth"};if(!r.ok)throw{code:"net"}}
+      this.done();
+    }catch(e){this.status(e&&e.code==="auth"?"토큰이 올바르지 않거나 만료되었습니다. ⚙ 설정에서 다시 연결해 주세요.":"동기화하지 못했습니다. 인터넷 연결을 확인해 주세요. 다음에 다시 시도합니다.",false)}
+    finally{this.busy=false}},
+  done(){const d=new Date();this.status(`동기화됨 ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}.`,true)},
+  soon(){if(!this.tok)return;clearTimeout(this.t);this.t=setTimeout(()=>this.run("push"),4000)}
+};
 /* ---------- current lesson ---------- */
 let L=null; // {id,title,level,slug,lessonUrl,scriptUrl,audioLink,src,work,ko,phrases,aboutA,aboutB,extra}
 const example=()=>({id:"example",title:"예시 대화",src:EXAMPLE,work:parse(EXAMPLE),ko:null,phrases:null,example:true});
@@ -994,13 +1054,14 @@ function renderNotes(){
 
 ["4","5"].forEach(n=>{$("#redo"+n).onclick=()=>{stopRec();$("#ans"+n).value="";$("#fb"+n).innerHTML="";$("#ans"+n).focus();saveProg()}});
 /* ---------- keep progress across app switches / reloads ---------- */
-let restoring=false,progT=null;
+let restoring=false,progT=null,progDirty=false;
 function saveProg(){
   if(restoring||!L||!L.work)return;
   const p={t:Date.now(),step:curStep,r4:$("#role4").value,i4,on4:run4||i4>0,a4:$("#ans4").value,
     i5,miss5,on5:!$("#my5").hidden||i5>0,a5:$("#ans5").value,work:$("#work").value,iP,missP,onP,aP:$("#ansP").value,phOrder};
+  if(L.progress&&JSON.stringify({...L.progress,t:0})===JSON.stringify({...p,t:0}))return;
   local.set("prog:"+L.id,p);L.progress=p;
-  if(!L.example){clearTimeout(progT);progT=setTimeout(()=>persist(),1500)}
+  if(!L.example){clearTimeout(progT);progDirty=true;progT=setTimeout(()=>{progDirty=false;persist()},1500)}
 }
 function restoreProg(){
   const a=local.get("prog:"+L.id),b=L.progress;const p=[a,b].filter(Boolean).sort((x,y)=>(y.t||0)-(x.t||0))[0];
@@ -1068,8 +1129,22 @@ $("#impFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(
     Object.values(d.notes||{}).forEach(x=>{if(!x||!x.id)return;if(!Notes.items[x.id]){Notes.items[x.id]=x;nn++}});
     local.set("lessons",Lib.items);local.set("notes",Notes.items);renderMine();renderCatalog();renderNotes();
     if(L&&L.example){const ids=Object.keys(Lib.items);if(ids.length)openLesson(JSON.parse(JSON.stringify(Lib.items[ids[0]])))}
-    $("#ioStatus").textContent=`수업 ${nl}개, 노트 ${nn}개를 가져왔습니다.`}
+    $("#ioStatus").textContent=`수업 ${nl}개, 노트 ${nn}개를 가져왔습니다.`;Sync.soon()}
   catch(err){$("#ioStatus").textContent="가져오지 못했습니다. 이 앱이나 Claude 연습장에서 내보낸 파일인지 확인해 주세요."}};
+$("#syncSave").onclick=async()=>{const t=$("#syncTok").value.trim();if(!t){$("#syncStatus").textContent="토큰을 붙여넣어 주세요.";return}
+  $("#syncSave").disabled=true;$("#syncStatus").textContent="확인 중…";
+  try{const r=await fetch("https://api.github.com/user",{headers:{"Accept":"application/vnd.github+json","Authorization":"Bearer "+t}});
+    if(!r.ok){$("#syncStatus").textContent="토큰이 올바르지 않습니다. 복사할 때 빠진 글자가 없는지 확인해 주세요.";return}
+    const sc=r.headers.get("x-oauth-scopes");if(sc!==null&&!/\bgist\b/.test(sc)){$("#syncStatus").textContent="이 토큰에는 gist 권한이 없습니다. 토큰을 만들 때 gist에 체크해 주세요.";return}
+    local.set("syncTok",t);local.set("syncGist","");$("#syncStatus").textContent="연결했습니다. 동기화 중…";await Sync.run("open");
+    $("#storeNote").textContent="저장한 수업은 GitHub 동기화로 다른 기기와 맞춰집니다.";
+  }catch(e){$("#syncStatus").textContent="확인하지 못했습니다. 인터넷 연결을 확인해 주세요."}
+  finally{$("#syncSave").disabled=false}};
+$("#syncNow").onclick=()=>{if(!Sync.tok){$("#syncStatus").textContent="먼저 토큰을 연결해 주세요.";return}$("#syncStatus").textContent="동기화 중…";Sync.run("open")};
+let offArm=false;$("#syncOff").onclick=()=>{if(!Sync.tok)return;if(!offArm){offArm=true;$("#syncOff").textContent="정말 끊기";setTimeout(()=>{offArm=false;$("#syncOff").textContent="연결 끊기"},4000);return}
+  offArm=false;$("#syncOff").textContent="연결 끊기";local.set("syncTok","");local.set("syncGist","");$("#syncTok").value="";$("#syncBadge").hidden=true;$("#syncStatus").textContent="연결을 끊었습니다. 이 기기의 기록은 그대로 남아 있습니다."};
+document.addEventListener("visibilitychange",()=>{if(!Sync.tok)return;if(document.visibilityState==="hidden"){saveProg();if(progDirty){clearTimeout(progT);progDirty=false;persist()}Sync.run("push")}else Sync.run("resume")});
+$("#toggleSet").addEventListener("click",()=>{$("#syncTok").value=Sync.tok});
 syncKeyUI();
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 
@@ -1078,7 +1153,8 @@ openLesson(example());renderCatalog();go(local.get("step")||"s3");
 Lib.init().then(async()=>{await Notes.init();renderNotes();const ids=Object.keys(Lib.items);let cur=local.get("current");
   if(!Lib.items[cur])cur=Lib.state&&Lib.state.current;
   if(!Lib.items[cur])cur=ids.sort((a,b)=>((Lib.items[b].progress&&Lib.items[b].progress.t)||Lib.items[b].updated||0)-((Lib.items[a].progress&&Lib.items[a].progress.t)||Lib.items[a].updated||0))[0];
-  if(cur&&Lib.items[cur])openLesson(JSON.parse(JSON.stringify(Lib.items[cur])));else{renderMine();if($("#lib").hidden)$("#toggleLib").click()}renderCatalog()});
+  if(cur&&Lib.items[cur])openLesson(JSON.parse(JSON.stringify(Lib.items[cur])));else if(!Sync.tok){renderMine();if($("#lib").hidden)$("#toggleLib").click()}renderCatalog();
+  if(Sync.tok){$("#syncBadge").hidden=false;$("#syncBadge").textContent="☁ 동기화 중…";await Sync.run("open");if(L&&L.example&&$("#lib").hidden&&!Object.keys(Lib.items).length)$("#toggleLib").click()}});
 })();
 </script>
 </body>
