@@ -187,7 +187,9 @@ audio{width:100%}
     <h3>연습 문장 받아쓰기</h3>
     <label class="row" style="gap:6px"><input type="radio" name="stt" value="chrome" id="sttChrome"> 브라우저 음성 인식: 무료, 사용 횟수에 안 잡힘</label>
     <label class="row" style="gap:6px"><input type="radio" name="stt" value="gemini" id="sttGemini"> Gemini 받아쓰기: 더 정확, 말할 때마다 1회 사용</label>
-    <p class="hint">질문 칸의 🎙는 한국어와 영어가 섞이므로 항상 Gemini로 받아씁니다.</p>
+    <h3>질문 받아쓰기</h3>
+    <label class="row" style="gap:6px"><input type="radio" name="qstt" value="gemini" id="qsttGemini"> Gemini: 영어 단어를 영어로 정확히 적음, 말을 마친 뒤 2~5초 걸림</label>
+    <label class="row" style="gap:6px"><input type="radio" name="qstt" value="chrome" id="qsttChrome"> 브라우저 한국어 인식: 말하는 동안 바로 써짐, 영어 단어는 한글 발음으로 적힐 수 있음</label>
     <h3>오늘 AI 사용</h3>
     <p id="usageTxt" style="margin:0"></p>
     <h3>기기 간 동기화</h3>
@@ -674,16 +676,17 @@ async function startGeminiRec(btn,ta,mixed){
   mrec.ondataavailable=ev=>{if(ev.data&&ev.data.size)chunks.push(ev.data)};
   mrec.onstop=async()=>{mstream.getTracks().forEach(t=>t.stop());mstream=null;mrec=null;mBtn=null;
     if(!chunks.length){micState(btn,"idle");return}
-    micState(btn,"busy");
-    try{const txt=await transcribe(new Blob(chunks,{type:chunks[0].type||"audio/webm"}),mixed);putText(ta,pre,txt);micNote(btn,"")}
+    micState(btn,"busy");const t0=Date.now(),tick=setInterval(()=>{btn.textContent=`받아쓰는 중… ${Math.round((Date.now()-t0)/1000)}초`},1000);
+    const q=btn.closest(".ask")&&btn.closest(".ask").querySelector(".quote"),ctx=q?q.textContent.trim():"";
+    try{const txt=await transcribe(new Blob(chunks,{type:chunks[0].type||"audio/webm"}),mixed,ctx);putText(ta,pre,txt);micNote(btn,"")}
     catch(e){micNote(btn,e&&e.code?errMsg(e.code):"받아쓰지 못했습니다. 다시 말해 주세요.")}
-    finally{micState(btn,"idle")}};
+    finally{clearInterval(tick);micState(btn,"idle")}};
   mrec.start();micState(btn,"rec");micNote(btn,"")
 }
-function startChromeRec(btn,ta){
+function startChromeRec(btn,ta,lang){
   const pre=ta.value?ta.value.trim()+" ":"";
   try{rec=new SR()}catch(e){micNote(btn,"브라우저 음성 인식을 시작하지 못했습니다. ⚙ 설정에서 Gemini 받아쓰기로 바꿔 보세요.");return}
-  rec.lang="en-US";rec.interimResults=true;rec.continuous=false;let fin="";
+  rec.lang=lang||"en-US";rec.interimResults=true;rec.continuous=lang==="ko-KR";let fin="";
   rec.onresult=ev=>{let im="";for(let i=ev.resultIndex;i<ev.results.length;i++){const r=ev.results[i];if(r.isFinal)fin+=r[0].transcript+" ";else im+=r[0].transcript}putText(ta,pre,fin+im)};
   rec.onerror=ev=>{if(["not-allowed","service-not-allowed","audio-capture"].includes(ev.error))micNote(btn,"마이크 사용이 허용되지 않았습니다. 브라우저의 사이트 설정에서 마이크를 허용하거나, ⚙ 설정에서 Gemini 받아쓰기로 바꿔 보세요.");
     else if(ev.error==="no-speech")micNote(btn,"말소리가 들리지 않았습니다. 다시 눌러 말해 주세요.")};
@@ -693,7 +696,8 @@ function startChromeRec(btn,ta){
 document.addEventListener("click",e=>{const btn=e.target.closest&&e.target.closest(".mic");if(!btn||btn.disabled)return;
   if((rec&&recBtn===btn)||(mrec&&mBtn===btn)){stopRec();return}
   stopRec();const ta=micTarget(btn);if(!ta)return;
-  const mixed=!!btn.dataset.mixed,mode=mixed?"gemini":(local.get("stt")||"chrome");
+  const mixed=!!btn.dataset.mixed,mode=mixed?(local.get("qstt")||"gemini"):(local.get("stt")||"chrome");
+  if(mixed&&mode==="chrome"&&SR){startChromeRec(btn,ta,"ko-KR");return}
   if(mode==="gemini"){startGeminiRec(btn,ta,mixed);return}
   if(SR){startChromeRec(btn,ta);return}
   if(G.key){startGeminiRec(btn,ta,false);return}
@@ -713,7 +717,8 @@ function renderUsage(){const u=local.get("usage")||{};const n=u.d===today()?u.n:
   $("#usageTxt").textContent=`오늘 ${n}회 사용했습니다. 무료 한도는 모델마다 다르고 구글이 바꾸기도 해서, 정확한 숫자는 Google AI Studio의 사용량 화면에서 확인할 수 있어요.`}
 const gText=j=>((j&&j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join("");
 let lastErr="";
-async function gCall(parts,{model,json,signal,onText}={}){
+function thinkOff(m){return /gemini-2\.5/.test(m)?{thinkingBudget:0}:/gemini-([3-9]|\d\d)/.test(m)?{thinkingLevel:"minimal"}:null}
+async function gCall(parts,{model,json,signal,onText,fast}={}){
   if(!G.key)throw{code:"no_key"};lastErr="";
   const stream=!!onText&&!json,first=model||G.model;
   const body={contents:[{role:"user",parts}]};if(json)body.generationConfig={responseMimeType:"application/json"};
@@ -721,14 +726,17 @@ async function gCall(parts,{model,json,signal,onText}={}){
   let res=null,err=null;
   for(let k=0;k<pool.length&&!res;k++){const m=pool[k];
     const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:${stream?"streamGenerateContent?alt=sse":"generateContent"}`;
+    let useFast=!!fast&&!!thinkOff(m);
     for(let tries=0;tries<2;tries++){
-      bump();let r;
-      try{r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":G.key},body:JSON.stringify(body),signal})}
+      bump();let r;const b2=JSON.parse(JSON.stringify(body));
+      if(useFast){b2.generationConfig=b2.generationConfig||{};b2.generationConfig.thinkingConfig=thinkOff(m)}
+      try{r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":G.key},body:JSON.stringify(b2),signal})}
       catch(e){if(e&&e.name==="AbortError")throw{code:"cancelled"};lastErr="인터넷 연결이 끊겼거나 요청이 차단되었습니다";throw{code:"upstream_error"}}
       if(r.ok){res=r;if(m!==first)local.set("lastFallback",m);break}
       let msg="",st="";try{const j=await r.json();msg=(j.error&&j.error.message)||"";st=(j.error&&j.error.status)||""}catch(e){}
       lastErr=`${r.status}${st?" "+st:""}${msg?": "+msg.slice(0,160):""} (모델 ${m})`;
       if(r.status===401||((r.status===400||r.status===403)&&/api key/i.test(msg)))throw{code:"bad_key"};
+      if(r.status===400&&useFast&&/think/i.test(msg)){useFast=false;tries--;continue}
       if(r.status===403&&/(not been used|disabled|SERVICE_DISABLED)/i.test(msg))throw{code:"api_off"};
       err={code:r.status===429?"rate_limited":"upstream_error"};
       if([500,502,503,504].includes(r.status)&&tries===0){await new Promise(z=>setTimeout(z,1500));continue}
@@ -757,11 +765,15 @@ async function toWav16k(blob){
   for(let i=0;i<d.length;i++){const x=Math.max(-1,Math.min(1,d[i]));v.setInt16(44+i*2,x<0?x*0x8000:x*0x7fff,true)}
   return new Blob([v],{type:"audio/wav"})}
 const toB64=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(",")[1]);r.onerror=rej;r.readAsDataURL(b)});
-async function transcribe(blob,mixed){
+async function transcribe(blob,mixed,ctx){
   let wav;try{wav=await toWav16k(blob)}catch(e){throw{code:"audio_error"}}
-  const prompt=mixed?"이 녹음은 한국인 영어 학습자의 질문입니다. 한국어와 영어가 섞여 있을 수 있습니다. 들린 그대로 받아쓰세요. 한국어는 한국어로, 영어 단어와 문장은 영어 철자로 적습니다. 내용을 바꾸거나 요약하지 말고, 받아쓴 글만 답하세요."
+  const prompt=mixed?`한국인 영어 학습자가 영어 대화문을 외우다가 질문하는 녹음입니다. 한국어 문장 사이에 영어 단어·구문이 섞여 있습니다.
+들린 그대로 받아쓰세요. 한국어는 한글로, 영어로 말한 부분은 반드시 영어 철자로 적습니다(예: "왜 여기서는 plus the 10%라고 해요?"). 영어를 한글 발음으로 적지 마세요.
+${ctx?`참고: 학습자는 지금 이 대사에 대해 묻고 있어서, 이 대사에 나온 단어가 자주 섞여 나옵니다.
+"${ctx}"
+`:""}내용을 바꾸거나 다듬거나 답하지 말고, 받아쓴 글만 출력하세요.`
     :"This is an English learner speaking English. Transcribe exactly what was said, word for word. Do NOT correct grammar, word choice or mistakes, do not complete unfinished sentences, and keep repeated or stumbled words. Reply with the transcript only, no quotes or notes. If nothing intelligible was said, reply with an empty string.";
-  const t=await gCall([{inlineData:{mimeType:"audio/wav",data:await toB64(wav)}},{text:prompt}],{model:G.quick});
+  const t=await gCall([{inlineData:{mimeType:"audio/wav",data:await toB64(wav)}},{text:prompt}],{model:mixed?G.model:G.quick,fast:true});
   return t.replace(/^["“]|["”]$/g,"").trim()}
 const errMsg=c=>(c==="upstream_error"&&lastErr?`Gemini 연결에 실패했습니다: ${lastErr}`:null)||({api_off:"이 키의 구글 프로젝트에서 Gemini API가 꺼져 있습니다. AI Studio에서 키를 새로 만들어 주세요.",no_key:"⚙ 설정에서 Gemini API 키를 먼저 넣어 주세요.",bad_key:"API 키가 올바르지 않습니다. ⚙ 설정에서 다시 확인해 주세요.",bad_model:"선택한 모델을 쓸 수 없습니다. ⚙ 설정에서 '저장하고 확인'을 눌러 모델을 다시 고르세요.",audio_error:"녹음을 처리하지 못했습니다. 다시 말해 주세요.",empty_completion:"답이 비어 있었습니다. 다시 시도해 주세요.",not_granted:"AI 사용이 허용되지 않아 이 기능을 쓸 수 없습니다.",rate_limited:"무료 사용 한도에 도달했거나 요청이 너무 잦습니다. 잠시 뒤(또는 내일) 다시 해 주세요.",invalid_json:"결과 형식이 맞지 않았습니다. 다시 눌러 주세요.",session_expired:"다시 로그인해야 합니다.",refused:"이 내용으로는 만들 수 없었습니다. 요청을 바꿔 다시 시도해 주세요."}[c]||"연결에 문제가 있었습니다. 다시 눌러 주세요.");
 
@@ -1111,10 +1123,12 @@ function fillModels(){const list=local.get("gmodels")||DEF_MODELS;
   opt($("#gModel"),G.model);opt($("#gQuick"),G.quick)}
 function syncKeyUI(){const has=!!G.key;$("#keyBanner").hidden=has;$("#noAi1").hidden=has;$("#noAi2").hidden=has}
 $("#toggleSet").onclick=()=>{const c=$("#setCard");c.hidden=!c.hidden;if(!c.hidden){$("#gKey").value=G.key;fillModels();renderUsage();
-  const st=local.get("stt")||"chrome";$("#sttChrome").checked=st==="chrome";$("#sttGemini").checked=st==="gemini";c.scrollIntoView({block:"start"})}};
+  const st=local.get("stt")||"chrome";$("#sttChrome").checked=st==="chrome";$("#sttGemini").checked=st==="gemini";
+  const qs=local.get("qstt")||"gemini";$("#qsttGemini").checked=qs==="gemini";$("#qsttChrome").checked=qs==="chrome";c.scrollIntoView({block:"start"})}};
 $("#gModel").onchange=()=>local.set("gmodel",$("#gModel").value);
 $("#gQuick").onchange=()=>local.set("gquick",$("#gQuick").value);
 $$('input[name="stt"]').forEach(r=>r.onchange=()=>{if(r.checked)local.set("stt",r.value)});
+$$('input[name="qstt"]').forEach(r=>r.onchange=()=>{if(r.checked)local.set("qstt",r.value)});
 $("#gKeySave").onclick=async()=>{const k=$("#gKey").value.trim();if(!k){local.set("gkey","");syncKeyUI();$("#gKeyStatus").textContent="키를 지웠습니다.";return}
   $("#gKeySave").disabled=true;$("#gKeyStatus").textContent="확인 중…";
   try{const res=await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",{headers:{"x-goog-api-key":k}});
