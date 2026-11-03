@@ -1,0 +1,1085 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2747c9">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="통암기">
+<title>통암기 대화 연습장</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow column of "index cards" — lesson bar, stepper, the working card; ruled script cards with a red margin line. */
+:root{
+  --paper:#f3f5fa; --card:#ffffff; --ink:#1a2132; --muted:#5b6377; --line:#d8dde9;
+  --rule:#e7ebf4; --accent:#2747c9; --accent-soft:#e6ebfb; --mark:#c4362b; --mark-soft:#fbe9e7;
+  --ok:#1f7a4d; --ok-soft:#e3f3ea; --warn:#9a5b00; --warn-soft:#fbf0dc; --cover:#dfe4f0;
+  --f-ui:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f121a; --card:#171b26; --ink:#e5e8f1; --muted:#9aa2b6; --line:#2b3244;
+  --rule:#20263a; --accent:#8098ff; --accent-soft:#1f2747; --mark:#ff7b6f; --mark-soft:#3a1f1d;
+  --ok:#62d29a; --ok-soft:#14301f; --warn:#f0b452; --warn-soft:#352812; --cover:#262d40; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f121a; --card:#171b26; --ink:#e5e8f1; --muted:#9aa2b6; --line:#2b3244;
+  --rule:#20263a; --accent:#8098ff; --accent-soft:#1f2747; --mark:#ff7b6f; --mark-soft:#3a1f1d;
+  --ok:#62d29a; --ok-soft:#14301f; --warn:#f0b452; --warn-soft:#352812; --cover:#262d40; color-scheme:dark}
+*{box-sizing:border-box}
+html{color-scheme:light}
+body{margin:0;-webkit-text-size-adjust:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.6}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 60px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:16px}
+header h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h2{margin:0;font-size:17px;font-weight:700;text-wrap:balance}
+.card h3{margin:0;font-size:14.5px;font-weight:700}
+.label{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.hint{color:var(--muted);font-size:13.5px;margin:0}
+textarea,input[type=text],input[type=search],select{width:100%;font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+textarea{resize:vertical;min-height:80px}
+textarea:focus,input:focus,select:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid2>div{display:flex;flex-direction:column;gap:6px;min-width:0}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+button,.btn{font:inherit;font-size:14px;font-weight:600;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.primary,.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--card)}
+button.ghost{background:transparent}
+button.danger{color:var(--mark)}
+button:disabled{opacity:.5;cursor:default}
+button.mic.on{background:var(--mark);border-color:var(--mark);color:var(--card)}
+a{color:var(--accent)}
+/* lesson bar */
+.lessonbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.lessonbar .now{min-width:0}
+.lessonbar .now b{font-size:16px}
+.lessonbar .sub{font-size:12.5px;color:var(--muted)}
+/* library */
+.liblist{display:flex;flex-direction:column;max-height:300px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}
+.liblist button{border:0;border-bottom:1px solid var(--line);border-radius:0;justify-content:space-between;font-weight:500;text-align:left;width:100%}
+.liblist button:last-child{border-bottom:0}
+.liblist button .tag{font-family:var(--f-mono);font-size:11px;color:var(--muted);font-weight:400}
+.liblist button.saved .tag{color:var(--ok)}
+.mine{display:flex;flex-direction:column;gap:6px}
+.mine .item{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:8px;padding:6px 6px 6px 12px}
+.mine .item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mine .item.cur{border-color:var(--accent);background:var(--accent-soft)}
+/* stepper */
+.steps{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.steps button{flex-direction:column;align-items:flex-start;gap:0;padding:8px 10px;text-align:left;min-width:0}
+.steps button .n{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.steps button .t{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.steps button[aria-current="step"]{border-color:var(--accent);background:var(--accent-soft)}
+.steps button[aria-current="step"] .n{color:var(--accent)}
+@media (max-width:600px){.steps{grid-template-columns:repeat(3,1fr)}}
+/* ruled script card */
+.ruled{position:relative;background:repeating-linear-gradient(to bottom,transparent 0,transparent 31px,var(--rule) 31px,var(--rule) 32px);
+  border-radius:8px;border:1px solid var(--line);padding:6px 12px 6px 46px;overflow-x:auto}
+.ruled::before{content:"";position:absolute;left:34px;top:0;bottom:0;width:1px;background:var(--mark);opacity:.55}
+.ln{position:relative;display:flex;gap:10px;min-height:32px;align-items:baseline;padding:4px 0}
+.ln .num{position:absolute;left:-40px;font-family:var(--f-mono);font-size:11px;color:var(--muted);width:22px;text-align:right}
+.ln .sp{flex:0 0 auto;font-weight:700;color:var(--accent);min-width:52px}
+.ln .sp.b{color:var(--mark)}
+.ln .tx{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
+.ln.cur{background:var(--accent-soft);border-radius:4px}
+.en{color:var(--muted);font-size:13.5px}
+/* covers */
+.cover{all:unset;box-sizing:border-box;cursor:pointer;display:block;border-radius:6px;padding:2px 8px;margin-left:-8px;width:calc(100% + 8px)}
+.cover.shut{background:var(--cover);color:transparent;user-select:none}
+.cover.shut::after{content:"눌러서 확인";color:var(--muted);font-size:12px;font-family:var(--f-ui);position:relative}
+.cover.shut .cv{display:inline-block;max-height:1.5em;overflow:hidden;filter:blur(6px)}
+.cover:focus-visible{outline:2px solid var(--accent)}
+.phrases{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.ask{border-top:1px dashed var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.answer{white-space:pre-wrap;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;line-height:1.7}
+.quote{border-left:3px solid var(--accent);padding:2px 10px;color:var(--muted);font-size:13.5px}
+.quote b{color:var(--ink)}
+.notes{display:flex;flex-direction:column;gap:10px}
+.note{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--paper)}
+.note .top{display:flex;gap:8px;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+.note .ttl{font-weight:700;font-size:15px}
+.cat{font-family:var(--f-mono);font-size:11px;border-radius:999px;padding:1px 8px;border:1px solid var(--accent);color:var(--accent);white-space:nowrap}
+.cat.c2{border-color:var(--ok);color:var(--ok)}
+.cat.c3{border-color:var(--warn);color:var(--warn)}
+.note .meta{font-size:12px;color:var(--muted)}
+.ph{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;background:var(--paper)}
+.ph .kr{font-weight:600}
+.ph .cover{font-family:var(--f-mono);font-size:14px;color:var(--accent)}
+.ph .cover.shut{color:transparent}
+.ph .src{font-size:12px;color:var(--muted)}
+/* feedback */
+.fb{border-radius:8px;padding:10px 12px;font-size:14px;display:flex;flex-direction:column;gap:6px}
+.fb.ok{background:var(--ok-soft);color:var(--ok)}
+.fb.bad{background:var(--mark-soft);color:var(--ink)}
+.fb ul{margin:0;padding-left:18px}
+.fb .score{font-family:var(--f-mono);font-size:12.5px;color:var(--muted)}
+.miss{color:var(--mark);text-decoration:underline wavy;text-underline-offset:3px}
+.wrong{background:var(--warn-soft);color:var(--warn);border-radius:3px;padding:0 2px}
+.said{font-family:var(--f-mono);font-size:13px}
+.turns{display:flex;flex-direction:column;gap:8px}
+.turn{border:1px solid var(--line);border-radius:8px;padding:8px 12px;max-width:92%}
+.turn.me{align-self:flex-end;background:var(--accent-soft);border-color:transparent}
+.qbtn{all:unset;box-sizing:border-box;cursor:pointer;flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);color:var(--muted);font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;background:var(--card)}
+.qbtn:hover,.qbtn:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+.turn{display:flex;gap:8px;align-items:flex-start}
+.turn>.body{flex:1;min-width:0}
+.ln .qbtn{align-self:center}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;max-height:78vh;overflow-y:auto;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -8px 30px rgba(0,0,0,.18);
+  padding-block:14px calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sheet .inner{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.turn .who{font-size:12px;font-weight:700;color:var(--muted)}
+.status{font-size:13px;color:var(--muted);margin:0}
+.notice{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 12px;font-size:13.5px;margin:0}
+details summary{cursor:pointer;color:var(--muted);font-size:13.5px}
+input[type=range]{width:160px}
+audio{width:100%}
+.subs{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px}
+.sub{display:flex;gap:10px;align-items:baseline;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.sub:last-child{border-bottom:0}
+.sub .ln-no{font-family:var(--f-mono);font-size:12px;color:var(--muted);flex:0 0 auto;min-width:34px}
+.sub .chg{min-width:0;flex:1}
+.sub del{color:var(--mark);text-decoration-thickness:1px}
+.sub ins{color:var(--ok);text-decoration:none;font-weight:600}
+.sub .why{display:block;font-size:12.5px;color:var(--muted)}
+.sub.off{opacity:.55}
+.picked{border:1px dashed var(--accent);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>통암기 대화 연습장</h1>
+    <p>핵심 구문 → 내 문장으로 → 한국어 대본 → 주고받기 → 혼자 말하기 → 쉐도잉 순서로 대화문을 통째로 외웁니다.</p>
+  </header>
+
+  <div class="lessonbar">
+    <div class="now"><div class="label">지금 연습 중</div><b id="curTitle">예시 대화</b><div class="sub" id="curSub"></div></div>
+    <div class="row"><button id="toggleSet" aria-label="설정">⚙ 설정</button><button id="toggleNotes">문법 노트</button><button id="toggleLib" class="primary">수업 목록</button></div>
+  </div>
+
+  <p class="notice" id="keyBanner" hidden>AI 기능(검토, 한국어 대본, 핵심 구문, 질문, Gemini 받아쓰기)을 쓰려면 <b>⚙ 설정</b>에서 Gemini API 키를 넣어 주세요. 키가 없어도 대본 연습과 브라우저 음성 인식은 쓸 수 있습니다.</p>
+
+  <!-- SETTINGS -->
+  <section class="card" id="setCard" hidden>
+    <h2>설정</h2>
+    <h3>Gemini API 키</h3>
+    <p class="hint"><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>에서 무료로 발급받습니다. 결제 정보를 등록하지 않으면 요금이 청구되지 않고, 무료 한도를 넘으면 그날은 잠시 멈출 뿐입니다. 키는 이 기기에만 저장되고 구글 서버로만 전송됩니다.</p>
+    <div class="row" style="flex-wrap:nowrap"><input type="password" id="gKey" placeholder="AIza로 시작하는 키" autocomplete="off" spellcheck="false"><button id="gKeySave" class="primary">저장하고 확인</button></div>
+    <p class="status" id="gKeyStatus"></p>
+    <div class="grid2">
+      <div><label class="label" for="gModel">기본 모델 (검토·대본·답변)</label><select id="gModel"></select></div>
+      <div><label class="label" for="gQuick">빠른 모델 (받아쓰기·노트 정리)</label><select id="gQuick"></select></div>
+    </div>
+    <h3>연습 문장 받아쓰기</h3>
+    <label class="row" style="gap:6px"><input type="radio" name="stt" value="chrome" id="sttChrome"> 브라우저 음성 인식: 무료, 사용 횟수에 안 잡힘</label>
+    <label class="row" style="gap:6px"><input type="radio" name="stt" value="gemini" id="sttGemini"> Gemini 받아쓰기: 더 정확, 말할 때마다 1회 사용</label>
+    <p class="hint">질문 칸의 🎙는 한국어와 영어가 섞이므로 항상 Gemini로 받아씁니다.</p>
+    <h3>오늘 AI 사용</h3>
+    <p id="usageTxt" style="margin:0"></p>
+    <h3>데이터 옮기기</h3>
+    <p class="hint">수업과 문법 노트는 이 기기의 브라우저에 저장됩니다. 백업하거나 다른 기기로 옮길 때 파일로 내보낸 뒤 가져오세요. Claude 연습장에서 내보낸 파일도 가져올 수 있습니다.</p>
+    <div class="row"><button id="expBtn">내보내기</button><label class="btn" for="impFile" tabindex="0">가져오기</label><input type="file" id="impFile" accept="application/json,.json" hidden></div>
+    <p class="status" id="ioStatus"></p>
+  </section>
+
+  <!-- NOTEBOOK -->
+  <section class="card" id="notesCard" hidden>
+    <div class="row" style="justify-content:space-between"><h2>문법 노트</h2><span class="label" id="notesCount"></span></div>
+    <p class="hint">주고받기와 혼자 말하기에서 질문한 내용이 수업과 상관없이 여기에 모입니다.</p>
+    <div class="row" style="flex-wrap:nowrap">
+      <input type="search" id="notesSearch" placeholder="찾기 (예: 현재완료, since, 인사)">
+      <select id="notesCat" style="width:auto"><option value="">전체</option><option>문법</option><option>표현</option><option>문화</option></select>
+    </div>
+    <div class="notes" id="notesList"></div>
+  </section>
+
+  <!-- LIBRARY -->
+  <section class="card" id="lib" hidden>
+    <h2>수업 고르기</h2>
+    <div class="mine" id="mine"></div>
+    <p class="status" id="storeNote"></p>
+
+    <h3>ESL-Lab Easy 목록</h3>
+    <input type="search" id="libSearch" placeholder="제목으로 찾기 (예: coffee, friends)">
+    <div class="liblist" id="catalog"></div>
+
+    <h3>링크로 추가</h3>
+    <div class="row" style="flex-wrap:nowrap">
+      <input type="text" id="linkIn" placeholder="https://www.esl-lab.com/easy/new-friends-script/">
+      <button id="linkAdd">추가</button>
+    </div>
+    <p class="status" id="linkStatus"></p>
+
+    <div class="picked" id="picked" hidden>
+      <div><div class="label">선택한 수업</div><b id="pkTitle"></b></div>
+      <div class="row">
+        <a class="btn" id="pkScript" target="_blank" rel="noopener">스크립트 페이지 열기 ↗</a>
+        <a class="btn" id="pkAudio" target="_blank" rel="noopener">음성 페이지 열기 ↗</a>
+        <button id="pkFetch" class="primary" hidden>대본 불러오기</button>
+      </div>
+      <p class="hint">페이지 내용을 자동으로 가져올 수는 없어서, 스크립트 페이지에서 대화 부분을 복사해 아래에 붙여넣어 주세요. 페이지가 한국어로 보이면 브라우저 자동 번역이 켜진 것이니 원본(영어)으로 돌린 뒤 복사하세요. 크롬: 주소창 번역 아이콘 또는 아래 번역 바에서 '영어' 선택. 사파리: 주소창 'aA' → '원본 보기'. 삼성 인터넷: 번역 바에서 '원본 보기'.</p>
+      <textarea id="pkSrc" rows="7" spellcheck="false" placeholder="Tom: Hi. ...&#10;Jenny: Hi, Tom. ..."></textarea>
+      <div class="row"><button id="pkSave" class="primary">저장하고 시작</button><span class="status" id="pkStatus"></span></div>
+    </div>
+  </section>
+
+  <nav class="steps" aria-label="단계">
+    <button data-step="s3"><span class="n">1</span><span class="t">핵심 구문</span></button>
+    <button data-step="s1"><span class="n">2</span><span class="t">내 문장으로</span></button>
+    <button data-step="s2"><span class="n">3</span><span class="t">한국어 대본</span></button>
+    <button data-step="s4"><span class="n">4</span><span class="t">주고받기</span></button>
+    <button data-step="s5"><span class="n">5</span><span class="t">혼자 말하기</span></button>
+    <button data-step="s6"><span class="n">6</span><span class="t">쉐도잉</span></button>
+  </nav>
+
+  <!-- STEP 3 -->
+  <section class="card" data-panel="s3" hidden>
+    <h2>1 · 핵심 구문 외우기</h2>
+    <p class="hint">한국어 뜻을 보고 영어로 먼저 말한 뒤 확인하세요. 내가 말한 것과 다르면 왜 다른지 물어볼 수 있고, 답은 문법 노트에 정리됩니다.</p>
+    <div class="row">
+      <button id="doPh">핵심 구문 만들기</button>
+      <button id="startP" class="primary">카드로 연습 시작</button>
+      <span class="status" id="phStatus"></span>
+    </div>
+    <div id="phCard" hidden class="card" style="padding:12px;background:var(--paper)">
+      <div class="label" id="phLabel"></div>
+      <div id="phKo" style="font-size:18px;font-weight:600;line-height:1.5"></div>
+      <textarea id="ansP" rows="2" placeholder="영어로 말하거나 입력하세요"></textarea>
+      <div class="row">
+        <button class="mic" data-target="ansP">🎙 말하기</button>
+        <button id="checkP" class="primary">확인</button>
+        <button id="redoP">다시하기</button>
+        <button id="peekP" class="ghost">정답 보기</button>
+        <button id="prevP" class="ghost">이전</button>
+        <button id="skipP" class="ghost">다음으로</button>
+      </div>
+      <div id="fbP"></div>
+      <div id="revP" hidden style="display:flex;flex-direction:column;gap:6px">
+        <div class="label">정답</div>
+        <div id="revEn" style="font-family:var(--f-mono);font-size:15px;color:var(--accent)"></div>
+        <div class="quote" id="revSrc"></div>
+        <div class="row"><button id="whyP" class="primary" hidden>왜 달라요?</button><button id="prevP2">이전 카드</button><button id="nextP">다음 카드</button></div>
+      </div>
+    </div>
+    <p class="status" id="stP"></p>
+    <div class="row" style="justify-content:space-between;margin-top:4px">
+      <div class="label">한눈에 복습</div>
+      <div class="row"><button id="phHide">모두 가리기</button><button id="phShuffle" class="ghost">순서 섞기</button><button id="phUnshuffle" class="ghost" hidden>원래 순서로</button></div>
+    </div>
+    <div class="phrases" id="phList"></div>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="card" data-panel="s1">
+    <h2>2 · A와 B 대사를 모두 내가 외우기 좋은 문장으로</h2>
+    <p class="notice" id="exNote" hidden>지금 보이는 대화는 형식을 보여 주려고 만든 예시입니다. ESL-Lab 원문이 아니에요. 위의 '수업 목록'에서 수업을 골라 불러오세요.</p>
+    <details><summary>원문 보기 / 고치기</summary>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+        <textarea id="src" rows="8" spellcheck="false"></textarea>
+        <div class="row"><button id="saveSrc">원문 고치기 저장</button><span class="status" id="srcStatus"></span></div>
+      </div>
+    </details>
+    <p class="hint">아래 대본에서 바꾸고 싶은 단어만 직접 고치세요(A, B 모두). 다 고치면 '검토'를 누르세요. 내가 바꾼 단어 때문에 함께 바뀌어야 하는 문법·시제만 알려 주고, 나머지는 건드리지 않습니다.</p>
+    <div class="row" id="spNames"></div>
+    <textarea id="work" rows="12" spellcheck="false"></textarea>
+    <div class="row">
+      <button id="doReview" class="primary">검토</button>
+      <button id="stopReview" class="ghost" hidden>멈추기</button>
+      <button id="resetWork" class="ghost">원문으로 되돌리기</button>
+      <span class="status" id="rwStatus"></span>
+    </div>
+    <p class="notice" id="noAi1" hidden>Gemini API 키가 없어서 검토는 쓸 수 없지만, 직접 고치고 외우기는 할 수 있습니다.</p>
+    <div id="revBox" hidden style="display:flex;flex-direction:column;gap:8px">
+      <div class="row" style="justify-content:space-between"><div class="label">함께 고쳐야 할 곳</div><button id="applyAll">모두 적용</button></div>
+      <div class="subs" id="revList"></div>
+    </div>
+    <div id="diffBox" hidden style="display:flex;flex-direction:column;gap:8px">
+      <div class="label">내가 바꾼 곳</div>
+      <div class="subs" id="diffList"></div>
+    </div>
+    <div class="row"><button id="confirmWork" class="primary">이 대본으로 외우기</button><span class="status" id="cwStatus"></span></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="card" data-panel="s2" hidden>
+    <h2>3 · 한국어 대본 외우기</h2>
+    <p class="hint">머릿속으로 다음 줄을 먼저 떠올린 뒤, 눌러서 맞았는지 확인하세요.</p>
+    <div class="row">
+      <button id="doKo" class="primary">한국어 대본 만들기</button>
+      <button id="koHide">모두 가리기</button>
+      <button id="koShow" class="ghost">모두 보기</button>
+      <label class="row" style="gap:6px"><input type="checkbox" id="showEn"> 영어도 보기</label>
+    </div>
+    <p class="status" id="koStatus"></p>
+    <p class="notice" id="noAi2" hidden>한국어 대본을 만들려면 ⚙ 설정에서 Gemini API 키를 넣어 주세요.</p>
+    <div class="ruled" id="koList"></div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="card" data-panel="s4" hidden>
+    <h2>4 · 주고받기</h2>
+    <div class="row">
+      <label class="label" for="role4">내가 맡을 역할</label>
+      <select id="role4" style="width:auto"></select>
+      <button id="start4" class="primary">처음부터</button>
+    </div>
+    <div class="row">
+      <label class="row" style="gap:6px"><input type="checkbox" id="speak4" checked> 상대 대사 읽어주기</label>
+      <label class="row" style="gap:6px"><input type="checkbox" id="hint4" checked> 내 차례에 한국어 보기</label>
+    </div>
+    <div class="turns" id="turns4"></div>
+    <div id="my4" hidden class="card" style="padding:12px;background:var(--paper)">
+      <div class="label" id="my4Label">내 차례</div>
+      <div id="my4Hint"></div>
+      <textarea id="ans4" rows="2" placeholder="말하거나 입력하세요"></textarea>
+      <div class="row">
+        <button class="mic" data-target="ans4">🎙 말하기</button>
+        <button id="check4" class="primary">확인</button>
+        <button id="redo4">다시하기</button>
+        <button id="peek4" class="ghost">원문 보기</button>
+        <button id="skip4" class="ghost">다음으로</button>
+      </div>
+      <div id="fb4"></div>
+    </div>
+    <p class="status" id="st4"></p>
+  </section>
+
+  <!-- STEP 5 -->
+  <section class="card" data-panel="s5" hidden>
+    <h2>5 · 혼자서 A와 B 모두 말하기</h2>
+    <p class="hint">주고받기와 같은 방식인데, 상대 대사도 내가 말합니다. 한 줄 말하고 확인, 다음 줄 말하고 확인을 끝까지 이어 가세요.</p>
+    <div class="row">
+      <button id="start5" class="primary">처음부터</button>
+      <label class="row" style="gap:6px"><input type="checkbox" id="hint5"> 한국어 보기</label>
+    </div>
+    <div class="turns" id="turns5"></div>
+    <div id="my5" hidden class="card" style="padding:12px;background:var(--paper)">
+      <div class="label" id="my5Label">차례</div>
+      <div id="my5Hint"></div>
+      <textarea id="ans5" rows="2" placeholder="말하거나 입력하세요"></textarea>
+      <div class="row">
+        <button class="mic" data-target="ans5">🎙 말하기</button>
+        <button id="check5" class="primary">확인</button>
+        <button id="redo5">다시하기</button>
+        <button id="peek5" class="ghost">원문 보기</button>
+        <button id="skip5" class="ghost">다음으로</button>
+      </div>
+      <div id="fb5"></div>
+    </div>
+    <p class="status" id="st5"></p>
+  </section>
+
+  <!-- STEP 6 -->
+  <section class="card" data-panel="s6" hidden>
+    <h2>6 · 쉐도잉</h2>
+    <div class="row" id="srcLinks"></div>
+    <div class="row" style="flex-wrap:nowrap">
+      <input type="text" id="audioLink" placeholder="다른 음성 링크가 있으면 붙여넣기 (선택)">
+      <button id="saveAudioLink">저장</button>
+    </div>
+    <p class="hint">원본 음성은 새 창에서 열립니다. 이 화면에서 속도를 조절하며 들으려면 음성 파일을 올리세요. 파일이 없으면 기계 음성으로 읽어 줍니다. 원본 음성은 바꾸기 전 대본이라, 쉐도잉 때는 원문을 함께 보는 게 맞습니다.</p>
+    <input type="file" id="audioFile" accept="audio/*">
+    <audio id="player" controls hidden></audio>
+    <div class="row">
+      <label class="label" for="rate">속도</label>
+      <input type="range" id="rate" min="0.6" max="1.2" step="0.05" value="0.9">
+      <span class="said" id="rateVal">0.90×</span>
+    </div>
+    <div class="row">
+      <label class="label" for="which6">보여줄 대본</label>
+      <select id="which6" style="width:auto"><option value="base">원문</option><option value="work">내 대본</option></select>
+      <button id="tts6" class="primary">기계 음성으로 읽기</button>
+      <button id="stop6" class="ghost">멈추기</button>
+      <label class="row" style="gap:6px"><input type="checkbox" id="loop6"> 반복</label>
+    </div>
+    <div class="ruled" id="list6"></div>
+  </section>
+</div>
+
+<section class="sheet" id="qSheet" hidden aria-label="문장에 질문하기">
+  <div class="inner" id="qInner">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0;font-size:16px">이 문장에 질문하기</h2><button id="qClose" class="ghost">닫기</button></div>
+    <label class="label" for="qSaid">내가 말한 문장 (선택)</label>
+    <input type="text" id="qSaid" placeholder="비교해 보고 싶은 내 문장이 있으면 적으세요">
+    <div class="row" id="qRow" hidden><span id="qAnchor"></span></div>
+  </div>
+</section>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- ESL-Lab Easy catalog (titles + addresses only) ---------- */
+const CAT=[["Could I Have Your Name, Please?","introductions-names"],["Making Online Friends","making-online-friends"],["Meeting Coworkers","meeting-coworkers"],["Meeting New Neighbors","meeting-new-neighbors"],["New Friends","new-friends"],["Nice to Meet You","introductions"],["Personal Profile","personal-profile"],["A Day at School","school-schedule"],["A Fun Day","family-recreation"],["After-School Activities","school-activities"],["Daily Schedule","daily-schedule"],["Evening Routine","evening-routine"],["Homework Time","homework"],["Morning Routine","morning-routine"],["Saturday's Chores","household-chores"],["Weekend Plans","weekend-plans"],["Dating Game","dating-game"],["Family Activities","family-activities"],["Family Relationships","family-relationships"],["First Date","first-date"],["Phone Message","phone-message"],["Voicemail","answering-machine"],["Acting School and Movie Stars","acting-school"],["Class Reunion","class-reunion"],["College Graduation","college-graduation"],["College Life","college-life"],["Homestay in the USA","homestay"],["Private Language Tutor","private-tutor"],["Bookstore Shopping","bookstore-shopping"],["Clothing Styles","clothing-styles"],["Office Supplies Company","office-supplies"],["Shopping for the Day","shopping-centers"],["Spending Money","spending-money"],["Coffee Shop","coffee-shop"],["Gourmet Cooking","gourmet-cooking"],["Heavenly Pies Restaurant","pie-restaurant"],["Lunch Meals","lunch-meals"],["Restaurant Order","restaurant-order"],["Snack Time","snack-time"],["Apartments for Rent","apartments-for-rent"],["Hotel Reservations","hotel-reservations"],["Hotel Room Service","hotel-room-service"],["Immigration and Customs","immigration-customs"],["Sightseeing Around Town","sightseeing-tours"],["Tokyo Travel Guide","tokyo-travel-guide"],["Train Tickets","train-tickets"],["Drugs and Medication","drugs-medication"],["Eyeglasses","eyeglasses"],["Health Club","health-club"],["Health Insurance","health-insurance"],["Physical Therapy","physical-therapy"],["Christmas is Coming!","christmas-gifts"],["Happy Birthday","happy-birthday"],["Happy New Year","happy-new-year"],["Holiday Traditions","holiday-traditions"],["Party Invitations","party-invitations"],["Party Time!","party-time"],["Camping Gear","camping-gear"],["Casino Gambling","casino-gambling"],["Movie Rentals","dvd-movie-rentals"],["Reading Books","reading-books"],["Social Media Websites","social-media"],["Donating Cars","donating-cars"],["Law Offices","law-offices"],["Missing Children","missing-children"]];
+const lessonUrl=(lv,slug)=>`https://www.esl-lab.com/${lv}/${slug}/`;
+const scriptUrl=(lv,slug)=>`https://www.esl-lab.com/${lv}/${slug}-script/`;
+
+const EXAMPLE=`Mina: Hi. I don't think we've met. I'm Mina.
+Dan: Hi, Mina. Nice to meet you. My name is Daniel, but everyone calls me Dan.
+Mina: Nice to meet you, Dan. So, where are you from?
+Dan: I grew up in Busan, but I moved to Seoul for work about three years ago. How about you?
+Mina: I was born in Daejeon, and I've lived in Seoul since college.
+Dan: Oh really? What do you do?
+Mina: I'm a nurse at a children's hospital. What about you?
+Dan: I work as a designer for a small game company near Gangnam.
+Mina: No way! My cousin works in games too.`;
+
+/* ---------- parsing ---------- */
+function parse(text){const out=[];(text||"").split(/\r?\n/).forEach(raw=>{const l=raw.trim();if(!l)return;
+  const m=l.match(/^([^:：]{1,30})[:：]\s*(.+)$/);if(m)out.push({sp:m[1].trim(),tx:m[2].trim()});else if(out.length)out[out.length-1].tx+=" "+l});return out}
+const speakers=lines=>[...new Set(lines.map(l=>l.sp))];
+const toText=lines=>lines.map(l=>l.sp+": "+l.tx).join("\n");
+
+/* ---------- storage: private per-user db, browser fallback ---------- */
+const local={get(k){try{return JSON.parse(localStorage.getItem("dl2:"+k))}catch(e){return null}},set(k,v){try{localStorage.setItem("dl2:"+k,JSON.stringify(v))}catch(e){}}};
+const Lib={db:null,uid:null,items:{},
+  async init(){
+    try{if(window.claude){const [db,user]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);
+      if(db&&user){const uid=await user.id();if(uid){this.db=db;this.uid=uid}}}}catch(e){}
+    if(this.db){try{const snap=await this.col().get();snap.docs.forEach(d=>{const v=d.data();if(!v)return;if(d.id==="_state")this.state=v;else if(v.src)this.items[d.id]=v})}catch(e){this.db=null}}
+    if(!this.db){this.items=local.get("lessons")||{}}
+    $("#storeNote").textContent="저장한 수업은 이 기기의 브라우저에 보관됩니다. 다른 기기로 옮길 때는 ⚙ 설정의 내보내기를 쓰세요.";
+  },
+  col(){return this.db.collection("data/users/"+this.uid)},
+  async save(L){L.updated=Date.now();this.items[L.id]=JSON.parse(JSON.stringify(L));
+    if(this.db){try{await this.col().doc(L.id).set(this.items[L.id])}catch(e){local.set("lessons",this.items)}}else local.set("lessons",this.items)},
+  async remove(id){delete this.items[id];if(this.db){try{await this.col().doc(id).delete()}catch(e){}}else local.set("lessons",this.items)}
+};
+
+/* ---------- notebook store ---------- */
+const Notes={items:{},
+  col(){return Lib.db.doc("data/users/"+Lib.uid+"/notebook").collection("notes")},
+  async init(){if(Lib.db){try{const s=await this.col().get();s.docs.forEach(d=>{const v=d.data();if(v)this.items[d.id]=v});return}catch(e){}}this.items=local.get("notes")||{}},
+  async save(n){this.items[n.id]=n;if(Lib.db){try{await this.col().doc(n.id).set(n);return}catch(e){}}local.set("notes",this.items)},
+  async remove(id){delete this.items[id];if(Lib.db){try{await this.col().doc(id).delete();return}catch(e){}}local.set("notes",this.items)}};
+/* ---------- current lesson ---------- */
+let L=null; // {id,title,level,slug,lessonUrl,scriptUrl,audioLink,src,work,ko,phrases,aboutA,aboutB,extra}
+const example=()=>({id:"example",title:"예시 대화",src:EXAMPLE,work:parse(EXAMPLE),ko:null,phrases:null,example:true});
+const base=()=>parse(L.src);
+async function persist(){if(L&&!L.example)await Lib.save(L)}
+function openLesson(lesson){L=lesson;local.set("current",L.id);
+  if(Lib.db&&!L.example&&(!Lib.state||Lib.state.current!==L.id)){Lib.state={current:L.id,t:Date.now()};Lib.col().doc("_state").set(Lib.state).catch(()=>{})}
+  $("#src").value=L.src;$("#work").value=toText(L.work||base());
+  $("#audioLink").value=L.audioLink||"";$("#curTitle").textContent=L.title;$("#exNote").hidden=!L.example;
+  $("#curSub").textContent=L.example?"형식을 보여 주는 예시입니다. '수업 목록'에서 ESL-Lab 수업을 고르세요.":`${(L.work||[]).length}줄 · ${speakers(L.work||[]).join(" / ")}`;
+  L.review=L.review||[];renderReview();renderSpNames();renderDiff();refreshAll();renderMine();restoreProg()}
+
+/* ---------- library UI ---------- */
+$("#toggleLib").onclick=()=>{const lib=$("#lib");lib.hidden=!lib.hidden;$("#toggleLib").textContent=lib.hidden?"수업 목록":"목록 닫기";if(!lib.hidden)lib.scrollIntoView({block:"start"})};
+let delArm=null;
+function renderMine(){
+  const arr=Object.values(Lib.items).sort((a,b)=>(b.updated||0)-(a.updated||0));
+  $("#mine").innerHTML=arr.length?`<div class="label">내 수업</div>`+arr.map(x=>`<div class="item ${L&&L.id===x.id?"cur":""}"><span>${esc(x.title)}</span><span class="row" style="flex-wrap:nowrap;gap:4px"><button data-open="${esc(x.id)}">열기</button><button class="danger ghost" data-del="${esc(x.id)}">${delArm===x.id?"삭제 확인":"삭제"}</button></span></div>`).join(""):`<p class="hint">아직 저장한 수업이 없습니다. 아래 목록에서 고르거나 링크를 넣어 추가하세요.</p>`;
+  $$("#mine [data-open]").forEach(b=>b.onclick=()=>{openLesson(JSON.parse(JSON.stringify(Lib.items[b.dataset.open])));$("#toggleLib").click();go("s3")});
+  $$("#mine [data-del]").forEach(b=>b.onclick=async()=>{const id=b.dataset.del;if(delArm!==id){delArm=id;renderMine();return}
+    delArm=null;await Lib.remove(id);if(L&&L.id===id)openLesson(example());else renderMine();renderCatalog()});
+}
+function renderCatalog(){
+  const q=$("#libSearch").value.trim().toLowerCase();
+  $("#catalog").innerHTML=CAT.filter(([t,s])=>!q||t.toLowerCase().includes(q)||s.includes(q)).map(([t,s])=>{const saved=!!Lib.items["easy-"+s];
+    return `<button class="${saved?"saved":""}" data-slug="${s}"><span>${esc(t)}</span><span class="tag">${saved?"저장됨":"easy"}</span></button>`}).join("")||`<p class="hint" style="padding:10px">찾는 제목이 없습니다.</p>`;
+  $$("#catalog [data-slug]").forEach(b=>b.onclick=()=>{const s=b.dataset.slug;const t=CAT.find(c=>c[1]===s)[0];pick("easy",s,t)});
+}
+$("#libSearch").oninput=renderCatalog;
+let picked=null;
+function pick(lv,slug,title){
+  const id=lv+"-"+slug;
+  if(Lib.items[id]){openLesson(JSON.parse(JSON.stringify(Lib.items[id])));$("#toggleLib").click();go("s3");return}
+  picked={id,level:lv,slug,title,lessonUrl:lessonUrl(lv,slug),scriptUrl:scriptUrl(lv,slug)};
+  $("#picked").hidden=false;$("#pkTitle").textContent=title;$("#pkScript").href=picked.scriptUrl;$("#pkAudio").href=picked.lessonUrl;
+  $("#pkSrc").value="";$("#pkStatus").textContent="";$("#picked").scrollIntoView({block:"nearest"});
+  $("#pkFetch").hidden=!browserOK;if(browserOK)fetchScript();
+}
+$("#linkAdd").onclick=()=>{
+  const v=$("#linkIn").value.trim();const m=v.match(/esl-lab\.com\/([a-z-]+)\/([a-z0-9-]+?)(?:-script)?\/?(?:[?#].*)?$/i);
+  if(!m){$("#linkStatus").textContent="ESL-Lab 수업 주소가 아닙니다. 예: https://www.esl-lab.com/easy/new-friends-script/";return}
+  $("#linkStatus").textContent="";const lv=m[1].toLowerCase(),slug=m[2].toLowerCase();const c=CAT.find(x=>x[1]===slug);
+  pick(lv,slug,c?c[0]:slug.replace(/-/g," ").replace(/\b\w/g,s=>s.toUpperCase()));
+};
+/* load the script through the Claude desktop app's browser */
+let mcp=null,browserOK=false;
+(async()=>{try{mcp=window.claude?await window.claude.use("mcp"):null}catch(e){mcp=null}browserOK=!!mcp;if(picked)$("#pkFetch").hidden=!browserOK})();
+function extractDialogue(text){
+  const lines=text.split(/\r?\n/).map(s=>s.trim());
+  // 1) the edited script: longest run of "Name: line" rows (blank rows allowed between)
+  const inl=/^([A-Z][A-Za-z.'\- ]{0,24}):\s+(\S.*)$/;let best=[],cur=[];
+  const end=()=>{if(cur.length>best.length&&speakers(cur).length>=2)best=cur;cur=[]};
+  lines.forEach(l=>{if(l==="")return;const m=l.match(inl);if(m)cur.push({sp:m[1].trim(),tx:m[2].trim()});else end()});end();
+  if(best.length>=2)return best;
+  // 2) fallback: "Name:" on its own row, text below
+  const lab=/^([A-Z][A-Za-z.'\- ]{0,24}):\s*$/,out=[];
+  for(let i=0;i<lines.length;i++){const m=lines[i].match(lab);if(!m)continue;let tx=[],j=i+1;
+    while(j<lines.length&&lines[j]===""&&!tx.length)j++;
+    while(j<lines.length&&lines[j]!==""&&!lab.test(lines[j])){tx.push(lines[j]);j++}
+    if(tx.length)out.push({sp:m[1].trim(),tx:tx.join(" ")});i=j-1}
+  return out;
+}
+function textOf(res){if(!res)return"";if(Array.isArray(res.content))return res.content.filter(c=>c&&c.type==="text").map(c=>c.text).join("\n");return typeof res.payload==="string"?res.payload:""}
+async function fetchScript(){
+  if(!mcp||!picked)return;const p=picked;$("#pkFetch").disabled=true;$("#pkStatus").textContent="대본 불러오는 중…";
+  try{
+    await mcp.callTool("host:claude_browser","navigate",{url:p.scriptUrl});
+    const t=textOf(await mcp.callTool("host:claude_browser","get_page_text",{max_chars:50000})).replace(/[’‘]/g,"'");
+    if(picked!==p)return;const lines=extractDialogue(t);
+    if(lines.length<2||speakers(lines).length<2){$("#pkStatus").textContent="페이지에서 대화를 찾지 못했습니다. 스크립트 페이지를 열어 직접 복사해 주세요.";return}
+    $("#pkSrc").value=toText(lines);$("#pkStatus").textContent=`${lines.length}줄을 불러왔습니다. 확인하고 '저장하고 시작'을 누르세요.`;
+  }catch(e){const c=e&&e.code;
+    $("#pkStatus").textContent=c==="server_not_connected"||c==="not_granted"||c==="unavailable"?"자동 불러오기는 Claude 데스크톱 앱에서만 됩니다. 스크립트 페이지를 열어 복사해 주세요.":"불러오지 못했습니다. 스크립트 페이지를 열어 복사해 주세요."+(e&&e.message?` (${String(e.message).slice(0,80)})`:"");}
+  finally{$("#pkFetch").disabled=false}}
+$("#pkFetch").onclick=fetchScript;
+$("#pkSave").onclick=async()=>{
+  const lines=parse($("#pkSrc").value);
+  if(lines.length<2||speakers(lines).length<2){$("#pkStatus").textContent="두 사람 이상의 \"이름: 대사\" 줄이 필요합니다.";return}
+  const txt=lines.map(l=>l.tx).join(" "),ko=(txt.match(/[가-힣]/g)||[]).length,en=(txt.match(/[A-Za-z]/g)||[]).length;
+  if(ko>en){$("#pkStatus").textContent="한국어로 번역된 내용입니다. 브라우저 자동 번역을 끄고 영어 원본을 복사해 주세요.";return}
+  const lesson={...picked,src:$("#pkSrc").value.trim(),work:lines,ko:null,phrases:null,review:[],audioLink:""};
+  await Lib.save(lesson);openLesson(lesson);$("#picked").hidden=true;renderCatalog();$("#toggleLib").click();go("s3");
+};
+
+/* ---------- comparison ---------- */
+const NUMW=["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen","twenty"];
+const FILL=new Set(["um","uh","er","erm","ah","hmm","mm","uhm","umm"]);
+function normWord(w){
+  w=w.toLowerCase().replace(/[’‘`]/g,"'");
+  const NOAPOS={dont:"do not",doesnt:"does not",didnt:"did not",isnt:"is not",arent:"are not",wasnt:"was not",werent:"were not",cant:"can not",wont:"will not",couldnt:"could not",wouldnt:"would not",shouldnt:"should not",havent:"have not",hasnt:"has not",im:"i am",ive:"i have",youre:"you are",youve:"you have",theyre:"they are",theyve:"they have",weve:"we have",thats:"that is",whats:"what is"};
+  const bare=w.replace(/[^a-z]/g,"");if(NOAPOS[bare])return NOAPOS[bare].split(" ");
+  w=w.replace(/^won't$/,"will not").replace(/^can't$/,"can not").replace(/^cannot$/,"can not")
+     .replace(/n't$/," not").replace(/'m$/," am").replace(/'re$/," are").replace(/'ve$/," have")
+     .replace(/'ll$/," will").replace(/'d$/," would").replace(/'s$/," is").replace(/^okay$/,"ok");
+  return w.replace(/[^a-z0-9' ]/g," ").replace(/'/g,"").split(/\s+/).filter(Boolean).map(t=>/^\d+$/.test(t)&&+t<=20?NUMW[+t]:t);
+}
+function tokenize(text,li){const disp=text.split(/\s+/).filter(Boolean),toks=[];disp.forEach((d,i)=>normWord(d).forEach(t=>toks.push({t,d:i,line:li})));return{disp,toks}}
+function spokenTokens(text){
+  let t=[];text.split(/\s+/).filter(Boolean).forEach(w=>normWord(w).forEach(x=>{if(!FILL.has(x))t.push(x)}));
+  let ch=true;while(ch){ch=false;for(let n=4;n>=1;n--){for(let i=0;i+2*n<=t.length;i++){let s=true;for(let k=0;k<n;k++)if(t[i+k]!==t[i+n+k]){s=false;break}if(s){t.splice(i,n);ch=true;i--}}}}
+  return t;
+}
+function align(a,b){const n=a.length,m=b.length,D=Array.from({length:n+1},()=>new Uint16Array(m+1));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)D[i][j]=a[i]===b[j]?D[i+1][j+1]+1:Math.max(D[i+1][j],D[i][j+1]);
+  const ops=[];let i=0,j=0;while(i<n&&j<m){if(a[i]===b[j]){ops.push(["=",i,j]);i++;j++}else if(D[i+1][j]>=D[i][j+1]){ops.push(["-",i]);i++}else{ops.push(["+",j]);j++}}
+  while(i<n)ops.push(["-",i++]);while(j<m)ops.push(["+",j++]);return ops}
+function compare(lines,spoken){
+  const orig=[],dispByLine=[];lines.forEach((l,li)=>{const r=tokenize(l.tx,li);dispByLine.push(r.disp);r.toks.forEach(t=>orig.push(t))});
+  const said=spokenTokens(spoken),ops=align(orig.map(o=>o.t),said);
+  const marks=dispByLine.map(d=>d.map(()=>"ok")),errs=[];let del=[],ins=[],matched=0,lastLine=0;
+  const flush=()=>{if(!del.length&&!ins.length)return;
+    const dIdx=[...new Set(del.map(i=>orig[i].line+":"+orig[i].d))].map(s=>s.split(":").map(Number));
+    const words=dIdx.map(([l,d])=>dispByLine[l][d]).join(" ");
+    if(del.length&&ins.length){dIdx.forEach(([l,d])=>marks[l][d]="wrong");errs.push({line:orig[del[0]].line,kind:"틀림",o:words,s:ins.map(j=>said[j]).join(" ")})}
+    else if(del.length){dIdx.forEach(([l,d])=>marks[l][d]="miss");errs.push({line:orig[del[0]].line,kind:"빠짐",o:words})}
+    else errs.push({line:lastLine,kind:"추가",s:ins.map(j=>said[j]).join(" ")});del=[];ins=[]};
+  ops.forEach(op=>{if(op[0]==="="){flush();matched++;lastLine=orig[op[1]].line}else if(op[0]==="-")del.push(op[1]);else ins.push(op[1])});flush();
+  return{errs,marks,dispByLine,score:orig.length?Math.round(matched/orig.length*100):0,saidCount:said.length}}
+const markedLine=(disp,mk)=>disp.map((w,i)=>mk[i]==="miss"?`<span class="miss">${esc(w)}</span>`:mk[i]==="wrong"?`<span class="wrong">${esc(w)}</span>`:esc(w)).join(" ");
+const errText=e=>e.kind==="틀림"?`틀림: "${esc(e.o)}" → <span class="said">${esc(e.s)}</span>`:e.kind==="빠짐"?`빠짐: "${esc(e.o)}"`:`추가: <span class="said">${esc(e.s)}</span>`;
+function showFb(el,res,lines,single){
+  if(!res.saidCount){el.innerHTML=`<div class="fb bad">아직 입력된 말이 없습니다.</div>`;return}
+  if(!res.errs.length){el.innerHTML=`<div class="fb ok">정확합니다. <span class="score">${res.score}%</span></div>`;return}
+  let h=`<div class="fb bad"><span class="score">일치 ${res.score}%</span>`;
+  if(single)h+=`<div>${markedLine(res.dispByLine[0],res.marks[0])}</div><ul>${res.errs.map(e=>`<li>${errText(e)}</li>`).join("")}</ul>`;
+  else{const by={};res.errs.forEach(e=>(by[e.line]=by[e.line]||[]).push(e));
+    h+=`<ul>`+Object.keys(by).sort((a,b)=>a-b).map(k=>`<li><b>${+k+1}번 (${esc(lines[k].sp)})</b> ${markedLine(res.dispByLine[k],res.marks[k])}<br>${by[k].map(errText).join(" · ")}</li>`).join("")+`</ul>`}
+  el.innerHTML=h+`</div>`}
+
+/* ---------- speech ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,recBtn=null,mrec=null,mstream=null,mBtn=null;
+const stopRec=()=>{if(rec){try{rec.stop()}catch(e){}}if(mrec&&mrec.state!=="inactive"){try{mrec.stop()}catch(e){}}};
+function micTarget(btn){return btn.dataset.target?$("#"+btn.dataset.target):(btn.closest(".ask")&&btn.closest(".ask").querySelector("textarea"))}
+function micState(btn,s){btn.classList.toggle("on",s==="rec");btn.disabled=s==="busy";btn.textContent=s==="rec"?"■ 그만":s==="busy"?"받아쓰는 중…":"🎙 말하기"}
+function micNote(btn,msg){const row=btn.closest(".row");let n=row.nextElementSibling;
+  if(!n||!n.classList.contains("micnote")){n=document.createElement("p");n.className="notice micnote";row.after(n)}n.textContent=msg;n.hidden=!msg}
+function putText(ta,pre,txt){ta.value=(pre+txt).trim();ta.dispatchEvent(new Event("input",{bubbles:true}))}
+async function startGeminiRec(btn,ta,mixed){
+  if(!G.key){micNote(btn,"Gemini 받아쓰기를 쓰려면 ⚙ 설정에서 API 키를 넣어 주세요.");return}
+  if(!navigator.mediaDevices||!window.MediaRecorder){micNote(btn,"이 브라우저는 녹음을 지원하지 않습니다. 크롬이나 사파리 최신 버전에서 열어 주세요.");return}
+  try{mstream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){micNote(btn,"마이크 사용이 허용되지 않았습니다. 브라우저 주소창의 자물쇠(또는 사이트 설정)에서 마이크를 허용해 주세요.");return}
+  const chunks=[],pre=ta.value?ta.value.trim()+" ":"";
+  mrec=new MediaRecorder(mstream);mBtn=btn;
+  mrec.ondataavailable=ev=>{if(ev.data&&ev.data.size)chunks.push(ev.data)};
+  mrec.onstop=async()=>{mstream.getTracks().forEach(t=>t.stop());mstream=null;mrec=null;mBtn=null;
+    if(!chunks.length){micState(btn,"idle");return}
+    micState(btn,"busy");
+    try{const txt=await transcribe(new Blob(chunks,{type:chunks[0].type||"audio/webm"}),mixed);putText(ta,pre,txt);micNote(btn,"")}
+    catch(e){micNote(btn,e&&e.code?errMsg(e.code):"받아쓰지 못했습니다. 다시 말해 주세요.")}
+    finally{micState(btn,"idle")}};
+  mrec.start();micState(btn,"rec");micNote(btn,"")
+}
+function startChromeRec(btn,ta){
+  const pre=ta.value?ta.value.trim()+" ":"";
+  try{rec=new SR()}catch(e){micNote(btn,"브라우저 음성 인식을 시작하지 못했습니다. ⚙ 설정에서 Gemini 받아쓰기로 바꿔 보세요.");return}
+  rec.lang="en-US";rec.interimResults=true;rec.continuous=false;let fin="";
+  rec.onresult=ev=>{let im="";for(let i=ev.resultIndex;i<ev.results.length;i++){const r=ev.results[i];if(r.isFinal)fin+=r[0].transcript+" ";else im+=r[0].transcript}putText(ta,pre,fin+im)};
+  rec.onerror=ev=>{if(["not-allowed","service-not-allowed","audio-capture"].includes(ev.error))micNote(btn,"마이크 사용이 허용되지 않았습니다. 브라우저의 사이트 설정에서 마이크를 허용하거나, ⚙ 설정에서 Gemini 받아쓰기로 바꿔 보세요.");
+    else if(ev.error==="no-speech")micNote(btn,"말소리가 들리지 않았습니다. 다시 눌러 말해 주세요.")};
+  rec.onend=()=>{micState(btn,"idle");rec=null;recBtn=null};
+  try{rec.start();recBtn=btn;micState(btn,"rec");micNote(btn,"")}catch(e){micNote(btn,"브라우저 음성 인식을 시작하지 못했습니다.")}
+}
+document.addEventListener("click",e=>{const btn=e.target.closest&&e.target.closest(".mic");if(!btn||btn.disabled)return;
+  if((rec&&recBtn===btn)||(mrec&&mBtn===btn)){stopRec();return}
+  stopRec();const ta=micTarget(btn);if(!ta)return;
+  const mixed=!!btn.dataset.mixed,mode=mixed?"gemini":(local.get("stt")||"chrome");
+  if(mode==="gemini"){startGeminiRec(btn,ta,mixed);return}
+  if(SR){startChromeRec(btn,ta);return}
+  if(G.key){startGeminiRec(btn,ta,false);return}
+  micNote(btn,"이 브라우저는 음성 인식을 지원하지 않습니다. 크롬에서 열거나, ⚙ 설정에 Gemini API 키를 넣어 Gemini 받아쓰기를 쓰세요.")});
+const synth=window.speechSynthesis;let voices=[];
+function loadVoices(){try{voices=synth.getVoices().filter(v=>/^en[-_]/i.test(v.lang))}catch(e){}}
+if(synth){loadVoices();synth.onvoiceschanged=loadVoices}
+function speak(text,who,list,rate){return new Promise(res=>{if(!synth){res();return}
+  const u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=rate||0.95;const idx=Math.max(0,speakers(list).indexOf(who));
+  if(voices.length)u.voice=voices[idx===1&&voices.length>1?1:0];u.pitch=idx===1?0.85:1.05;u.onend=res;u.onerror=res;synth.speak(u)})}
+
+/* ---------- Gemini ---------- */
+const G={get key(){return local.get("gkey")||""},get model(){return local.get("gmodel")||"gemini-2.5-flash"},get quick(){return local.get("gquick")||"gemini-2.5-flash-lite"}};
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()};
+function bump(){const u=local.get("usage")||{};if(u.d!==today()){u.d=today();u.n=0}u.n++;local.set("usage",u);renderUsage()}
+function renderUsage(){const u=local.get("usage")||{};const n=u.d===today()?u.n:0;
+  $("#usageTxt").textContent=`오늘 ${n}회 사용했습니다. 무료 한도는 모델마다 다르고 구글이 바꾸기도 해서, 정확한 숫자는 Google AI Studio의 사용량 화면에서 확인할 수 있어요.`}
+const gText=j=>((j&&j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join("");
+async function gCall(parts,{model,json,signal,onText}={}){
+  if(!G.key)throw{code:"no_key"};
+  const stream=!!onText&&!json,m=model||G.model;
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:${stream?"streamGenerateContent?alt=sse":"generateContent"}`;
+  const body={contents:[{role:"user",parts}]};if(json)body.generationConfig={responseMimeType:"application/json"};
+  bump();let res;
+  try{res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":G.key},body:JSON.stringify(body),signal})}
+  catch(e){throw{code:e&&e.name==="AbortError"?"cancelled":"upstream_error"}}
+  if(!res.ok){let msg="";try{const j=await res.json();msg=(j.error&&j.error.message)||""}catch(e){}
+    throw{code:res.status===429?"rate_limited":(res.status===400&&/api key/i.test(msg))||res.status===401||res.status===403?"bad_key":res.status===404?"bad_model":"upstream_error",message:msg}}
+  if(!stream){const j=await res.json();const t=gText(j);if(!t)throw{code:j.promptFeedback&&j.promptFeedback.blockReason?"refused":"empty_completion"};return t}
+  const rd=res.body.getReader(),dec=new TextDecoder();let buf="",text="";
+  try{for(;;){const {value,done}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
+    while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(!line.startsWith("data:"))continue;
+      try{const d=gText(JSON.parse(line.slice(5)));if(d){text+=d;onText({text,delta:d})}}catch(e){}}}}
+  catch(e){throw{code:e&&e.name==="AbortError"?"cancelled":"upstream_error",text}}
+  if(!text)throw{code:"empty_completion"};return text}
+let sample=async(input,opts={})=>({text:await gCall([{text:String(input)}],{signal:opts.signal,onText:opts.onText,model:opts.modelTier==="quick"?G.quick:G.model}),truncated:false});
+sample.json=async(input,opts={})=>{const t=await gCall([{text:String(input)}],{json:true,signal:opts.signal,model:opts.modelTier==="quick"?G.quick:G.model});
+  try{return JSON.parse(t)}catch(e){const m=t.match(/[\[{][\s\S]*[\]}]/);if(m){try{return JSON.parse(m[0])}catch(_){}}throw{code:"invalid_json",text:t}}};
+/* audio -> 16 kHz mono WAV -> Gemini */
+async function toWav16k(blob){
+  const AC=window.AudioContext||window.webkitAudioContext,ac=new AC();
+  const buf=await new Promise(async(res,rej)=>{try{ac.decodeAudioData(await blob.arrayBuffer(),res,rej)}catch(e){rej(e)}});try{ac.close()}catch(e){}
+  const rate=16000,len=Math.max(1,Math.ceil(buf.duration*rate)),OC=window.OfflineAudioContext||window.webkitOfflineAudioContext,off=new OC(1,len,rate);
+  const src=off.createBufferSource();src.buffer=buf;src.connect(off.destination);src.start(0);const r=await off.startRendering();const d=r.getChannelData(0);
+  const v=new DataView(new ArrayBuffer(44+d.length*2)),w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+  w(0,"RIFF");v.setUint32(4,36+d.length*2,true);w(8,"WAVE");w(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,"data");v.setUint32(40,d.length*2,true);
+  for(let i=0;i<d.length;i++){const x=Math.max(-1,Math.min(1,d[i]));v.setInt16(44+i*2,x<0?x*0x8000:x*0x7fff,true)}
+  return new Blob([v],{type:"audio/wav"})}
+const toB64=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(",")[1]);r.onerror=rej;r.readAsDataURL(b)});
+async function transcribe(blob,mixed){
+  let wav;try{wav=await toWav16k(blob)}catch(e){throw{code:"audio_error"}}
+  const prompt=mixed?"이 녹음은 한국인 영어 학습자의 질문입니다. 한국어와 영어가 섞여 있을 수 있습니다. 들린 그대로 받아쓰세요. 한국어는 한국어로, 영어 단어와 문장은 영어 철자로 적습니다. 내용을 바꾸거나 요약하지 말고, 받아쓴 글만 답하세요."
+    :"This is an English learner speaking English. Transcribe exactly what was said, word for word. Do NOT correct grammar, word choice or mistakes, do not complete unfinished sentences, and keep repeated or stumbled words. Reply with the transcript only, no quotes or notes. If nothing intelligible was said, reply with an empty string.";
+  const t=await gCall([{inlineData:{mimeType:"audio/wav",data:await toB64(wav)}},{text:prompt}],{model:G.quick});
+  return t.replace(/^["“]|["”]$/g,"").trim()}
+const errMsg=c=>({no_key:"⚙ 설정에서 Gemini API 키를 먼저 넣어 주세요.",bad_key:"API 키가 올바르지 않습니다. ⚙ 설정에서 다시 확인해 주세요.",bad_model:"선택한 모델을 쓸 수 없습니다. ⚙ 설정에서 '저장하고 확인'을 눌러 모델을 다시 고르세요.",audio_error:"녹음을 처리하지 못했습니다. 다시 말해 주세요.",empty_completion:"답이 비어 있었습니다. 다시 시도해 주세요.",not_granted:"AI 사용이 허용되지 않아 이 기능을 쓸 수 없습니다.",rate_limited:"무료 사용 한도에 도달했거나 요청이 너무 잦습니다. 잠시 뒤(또는 내일) 다시 해 주세요.",invalid_json:"결과 형식이 맞지 않았습니다. 다시 눌러 주세요.",session_expired:"다시 로그인해야 합니다.",refused:"이 내용으로는 만들 수 없었습니다. 요청을 바꿔 다시 시도해 주세요."}[c]||"연결에 문제가 있었습니다. 다시 눌러 주세요.");
+
+/* ---------- rendering ---------- */
+function lineHTML(l,i,list,inner){const sp=speakers(list),src=list===L.work?"work":"base";return `<div class="ln" data-i="${i}"><span class="num">${i+1}</span><span class="sp ${sp.indexOf(l.sp)===1?"b":""}">${esc(l.sp)}</span><span class="tx">${inner==null?esc(l.tx):inner}</span><button type="button" class="qbtn" data-q="${i}" data-src="${src}" title="이 문장에 질문하기" aria-label="${i+1}번 문장에 질문하기">?</button></div>`}
+function turnEl(l,cls){const d=document.createElement("div");d.className="turn"+(cls?" "+cls:"");const i=L.work.indexOf(l);
+  d.innerHTML=`<div class="body"><div class="who">${esc(l.sp)}</div><div>${esc(l.tx)}</div></div>${i>=0?`<button type="button" class="qbtn" data-q="${i}" data-src="work" title="이 문장에 질문하기" aria-label="${i+1}번 문장에 질문하기">?</button>`:""}`;return d}
+const cover=(text,shut)=>`<button type="button" class="cover ${shut?"shut":""}"><span class="cv">${esc(text)}</span></button>`;
+function bindCovers(root){root.querySelectorAll(".cover").forEach(b=>b.onclick=()=>b.classList.toggle("shut"))}
+function fillLabels(){
+  const w=speakers(L.work);const sel=$("#role4"),cur=sel.value;sel.innerHTML=w.map(s=>`<option>${esc(s)}</option>`).join("");if(w.includes(cur))sel.value=cur}
+function renderKo(shut=true){
+  const box=$("#koList"),en=$("#showEn").checked;
+  if(!L.ko){box.innerHTML=L.work.map((l,i)=>lineHTML(l,i,L.work,`<span class="en">한국어 대본을 아직 만들지 않았습니다.</span>`)).join("");return}
+  box.innerHTML=L.work.map((l,i)=>lineHTML(l,i,L.work,cover(L.ko[i]||"",shut)+(en?`<span class="en">${esc(l.tx)}</span>`:""))).join("");bindCovers(box)}
+let phOrder=null;
+function renderPh(shut=true){
+  const box=$("#phList");if(!L.phrases||!L.phrases.length){box.innerHTML=`<p class="hint">'핵심 구문 만들기'를 누르면 이 수업 원문에서 외울 구문을 뽑아 줍니다.</p>`;return}
+  const order=phOrder&&phOrder.length===L.phrases.length?phOrder:L.phrases.map((_,i)=>i);
+  box.innerHTML=order.map(i=>{const p=L.phrases[i];return `<div class="ph"><span class="kr">${esc(p.ko)}</span>${cover(p.en,shut)}${p.line?`<span class="src">${p.line}번 줄</span>`:""}</div>`}).join("");bindCovers(box)}
+function render6(){const list=$("#which6").value==="work"?L.work:base();$("#list6").innerHTML=list.map((l,i)=>lineHTML(l,i,list)).join("");
+  const links=[];if(L.lessonUrl)links.push(`<a class="btn primary" href="${esc(L.lessonUrl)}" target="_blank" rel="noopener">원본 음성 듣기 (ESL-Lab) ↗</a>`);
+  if(L.scriptUrl)links.push(`<a class="btn" href="${esc(L.scriptUrl)}" target="_blank" rel="noopener">스크립트 페이지 ↗</a>`);
+  if(L.audioLink&&/^https?:\/\//i.test(L.audioLink))links.push(`<a class="btn" href="${esc(L.audioLink)}" target="_blank" rel="noopener">내가 넣은 음성 링크 ↗</a>`);
+  $("#srcLinks").innerHTML=links.join("")||`<p class="hint">예시 대화에는 원본 음성이 없습니다.</p>`}
+function refreshAll(){resetP();$("#phUnshuffle").hidden=true;fillLabels();renderKo();renderPh();render6();reset4();reset5()}
+
+/* ---------- nav ---------- */
+let curStep="s3";
+function go(id){$$("[data-panel]").forEach(p=>p.hidden=p.dataset.panel!==id);
+  $$(".steps button").forEach(b=>{if(b.dataset.step===id)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current")});
+  local.set("step",id);curStep=id;if(synth)synth.cancel();stopRec();saveProg()}
+$$(".steps button").forEach(b=>b.onclick=()=>go(b.dataset.step));
+
+/* ---------- STEP 1 ---------- */
+$("#saveSrc").onclick=async()=>{const lines=parse($("#src").value);if(lines.length<2){$("#srcStatus").textContent="\"이름: 대사\" 형식인지 확인해 주세요.";return}
+  L.src=$("#src").value.trim();await persist();fillLabels();render6();$("#srcStatus").textContent="저장했습니다."};
+/* review: user edits, Claude only flags what their edits force */
+const wordsOf=s=>s.split(/\s+/).filter(Boolean);
+function lineDiff(a,b){const A=wordsOf(a),B=wordsOf(b),key=w=>w.toLowerCase();
+  const ops=align(A.map(key),B.map(key));const out=[];let del=[],ins=[];
+  const flush=()=>{if(del.length)out.push(`<del>${esc(del.join(" "))}</del>`);if(ins.length)out.push(`<ins>${esc(ins.join(" "))}</ins>`);del=[];ins=[]};
+  ops.forEach(o=>{if(o[0]==="="){flush();out.push(esc(B[o[2]]))}else if(o[0]==="-")del.push(A[o[1]]);else ins.push(B[o[1]])});flush();return out.join(" ")}
+function renderDiff(){
+  const o=base(),w=parse($("#work").value),rows=[];
+  if(o.length!==w.length)rows.push(`<div class="sub" style="cursor:default"><span class="chg">줄 수가 원문(${o.length}줄)과 다릅니다 (지금 ${w.length}줄). 줄을 지우거나 합치지 않았는지 확인하세요.</span></div>`);
+  w.forEach((l,i)=>{const ol=o[i];if(!ol)return;const sp=ol.sp!==l.sp?`<del>${esc(ol.sp)}</del> <ins>${esc(l.sp)}</ins>`:esc(l.sp);
+    if(ol.tx!==l.tx||ol.sp!==l.sp)rows.push(`<div class="sub" style="cursor:default"><span class="ln-no">${i+1}번</span><span class="chg"><b>${sp}:</b> ${lineDiff(ol.tx,l.tx)}</span></div>`)});
+  $("#diffBox").hidden=!rows.length;$("#diffList").innerHTML=rows.join("")}
+let lastLabels=[];
+function renderSpNames(){const lines=parse($("#work").value);lastLabels=lines.map(l=>l.sp);
+  $("#spNames").innerHTML=`<span class="label" style="width:100%">등장인물 이름 (한 번 바꾸면 모든 줄에 적용)</span>`+speakers(lines).map(s=>`<input type="text" class="spn" data-old="${esc(s)}" value="${esc(s)}" aria-label="${esc(s)} 이름" style="width:150px">`).join("");
+  $$("#spNames .spn").forEach(inp=>inp.addEventListener("change",()=>{const nw=inp.value.trim().replace(/:/g,"");if(nw&&nw!==inp.dataset.old)renameSpeaker(inp.dataset.old,nw);else inp.value=inp.dataset.old}))}
+function renameSpeaker(old,nw){const lines=parse($("#work").value);lines.forEach(l=>{if(l.sp===old)l.sp=nw});$("#work").value=toText(lines);renderSpNames();renderDiff()}
+$("#work").addEventListener("change",()=>{const lines=parse($("#work").value);
+  if(lines.length===lastLabels.length){const pairs={};lines.forEach((l,i)=>{if(l.sp!==lastLabels[i]&&!pairs[lastLabels[i]])pairs[lastLabels[i]]=l.sp});
+    if(Object.keys(pairs).length){lines.forEach((l,i)=>{if(pairs[lastLabels[i]]&&l.sp===lastLabels[i])l.sp=pairs[lastLabels[i]]});$("#work").value=toText(lines)}}
+  renderSpNames();renderDiff()});
+let diffT=null;$("#work").addEventListener("input",()=>{clearTimeout(diffT);diffT=setTimeout(renderDiff,300)});
+function renderReview(){
+  const list=L.review||[];$("#revBox").hidden=!list.length;
+  $("#revList").innerHTML=list.map((s,i)=>`<div class="sub ${s.done?"off":""}" style="cursor:default"><span class="ln-no">${s.line+1}번</span><span class="chg"><del>${esc(s.from)}</del> → <ins>${esc(s.to)}</ins>${s.why?`<span class="why">${esc(s.why)}</span>`:""}</span><button data-apply="${i}" ${s.done?"disabled":""}>${s.done?"적용됨":"적용"}</button></div>`).join("");
+  $$("#revList [data-apply]").forEach(b=>b.onclick=()=>{applyOne(+b.dataset.apply);renderReview();renderDiff();persist()})}
+function applyOne(i){const s=L.review[i];if(!s||s.done)return false;const lines=parse($("#work").value),l=lines[s.line];
+  if(!l||!l.tx.includes(s.from)){s.done=true;return false}l.tx=l.tx.replace(s.from,s.to);$("#work").value=toText(lines);s.done=true;return true}
+$("#applyAll").onclick=()=>{(L.review||[]).forEach((_,i)=>applyOne(i));renderReview();renderDiff();persist()};
+let resetArm=false;
+$("#resetWork").onclick=()=>{if(!resetArm){resetArm=true;$("#resetWork").textContent="정말 되돌리기";setTimeout(()=>{resetArm=false;$("#resetWork").textContent="원문으로 되돌리기"},4000);return}
+  resetArm=false;$("#resetWork").textContent="원문으로 되돌리기";$("#work").value=toText(base());L.review=[];renderReview();renderSpNames();renderDiff()};
+let ctl1=null;
+$("#doReview").onclick=async()=>{
+  if(!sample)return;const o=base(),w=parse($("#work").value);
+  if(w.length<2){$("#rwStatus").textContent="\"이름: 대사\" 형식인지 확인해 주세요.";return}
+  if(toText(o)===toText(w)){$("#rwStatus").textContent="아직 바꾼 곳이 없습니다. 대본에서 단어를 고친 뒤 눌러 주세요.";return}
+  ctl1=new AbortController();$("#doReview").disabled=true;$("#stopReview").hidden=false;$("#rwStatus").textContent="검토 중…";
+  const prompt=`A Korean adult memorizes English dialogues word for word. They took an ORIGINAL dialogue and personally swapped a few words (names, places, jobs, numbers...). The original wording is sacred and so are their word choices.
+Your ONLY job: find what MUST also change because of THEIR edits, and nothing else:
+- grammar their edit broke: a/an, singular/plural, he/she/his/her, subject-verb agreement, prepositions that no longer fit the new word ("in Seoul" vs "at Seoul" type errors only when wrong)
+- tense or time consistency their edit made wrong (e.g. they changed an age or a "was/is" fact so another verb must shift)
+- facts elsewhere that now contradict their edit (e.g. they renamed a person but the old name still appears in another line; a city changed in one line but referred to differently later)
+- clear spelling mistakes inside the words they typed
+NEVER: suggest style improvements, more natural wording, synonyms, changes to interjections or idioms, or changes to any part unrelated to their edits. Do not re-suggest their own edits. If nothing must change, return an empty list.
+Each suggestion: "line" (1-based), "from" = the SHORTEST exact substring of the EDITED line (character for character), "to" = replacement, "why" = short Korean reason (예: "주어가 바뀌어 동사 일치", "이름 변경 반영").
+ORIGINAL:
+${o.map((l,i)=>`${i+1}. ${l.sp}: ${l.tx}`).join("\n")}
+EDITED:
+${w.map((l,i)=>`${i+1}. ${l.sp}: ${l.tx}`).join("\n")}
+Reply with only JSON: {"suggestions":[{"line":1,"from":"...","to":"...","why":"..."}]}`;
+  try{const r=await sample.json(prompt,{signal:ctl1.signal,cache:false});
+    if(!r||!Array.isArray(r.suggestions))throw{code:"invalid_json"};
+    const list=r.suggestions.map(s=>({line:(+s.line||0)-1,from:String(s.from||""),to:String(s.to??""),why:String(s.why||""),done:false}))
+      .filter(s=>w[s.line]&&s.from&&s.from!==s.to&&w[s.line].tx.includes(s.from));
+    L.review=list;renderReview();
+    $("#rwStatus").textContent=list.length?`함께 고쳐야 할 곳 ${list.length}개를 찾았습니다. 적용하거나 직접 고친 뒤 다시 '검토'를 누르세요.`:"고칠 곳이 없습니다. '이 대본으로 외우기'를 누르세요.";persist();
+  }catch(e){$("#rwStatus").textContent=e.code==="cancelled"?"멈췄습니다.":errMsg(e.code)}
+  finally{$("#doReview").disabled=!sample;$("#stopReview").hidden=true}};
+$("#stopReview").onclick=()=>ctl1&&ctl1.abort();
+$("#confirmWork").onclick=async()=>{const lines=parse($("#work").value);
+  if(lines.length<2){$("#cwStatus").textContent="\"이름: 대사\" 형식인지 확인해 주세요.";return}
+  const changed=toText(lines)!==toText(L.work);L.work=lines;if(changed){L.ko=null}
+  await persist();openLesson(L);$("#cwStatus").textContent=changed?"저장했습니다. 이제 한국어 대본을 만드세요.":"저장했습니다.";go("s2")};
+
+/* ---------- STEP 2 & 3 (one AI call makes both) ---------- */
+let ctl2=null;
+$("#doKo").onclick=async()=>{
+  if(!sample||!L.work.length)return;ctl2=new AbortController();$("#doKo").disabled=true;$("#koStatus").textContent="만드는 중…";
+  const prompt=`Make memorization material for a Korean adult who will memorize this English dialogue word for word.
+1) "ko": a COMPLETE Korean script, one entry per line (same order, same count: ${L.work.length}). Translate every sentence fully and naturally in spoken Korean (not a summary), so that recalling the Korean line lets the learner rebuild the English line. Keep names as they are in Korean script.
+DIALOGUE: ${JSON.stringify(L.work.map(l=>l.sp+": "+l.tx))}
+Reply with only JSON: {"ko":["..."]}`;
+  try{const r=await sample.json(prompt,{signal:ctl2.signal});
+    if(!r||!Array.isArray(r.ko))throw{code:"invalid_json"};
+    L.ko=L.work.map((_,i)=>String(r.ko[i]||""));
+    await persist();renderKo();reset4();$("#koStatus").textContent="만들었습니다. 한 줄씩 떠올리고 눌러서 확인하세요.";
+  }catch(e){$("#koStatus").textContent=e.code==="cancelled"?"":errMsg(e.code)}
+  finally{$("#doKo").disabled=!sample}};
+$("#koHide").onclick=()=>renderKo(true);$("#koShow").onclick=()=>renderKo(false);$("#showEn").onchange=()=>renderKo(true);
+$("#phHide").onclick=()=>renderPh(true);
+let ctl3=null;
+$("#doPh").onclick=async()=>{
+  if(!sample)return;const o=base();ctl3=new AbortController();$("#doPh").disabled=true;$("#phStatus").textContent="만드는 중…";
+  const prompt=`A Korean adult will memorize this English dialogue word for word. Pick 6-12 key reusable English chunks worth memorizing verbatim (exact substrings of a line, copied character for character, e.g. "I don't think we've met", "but everybody calls me", "I'm majoring in"). Prefer useful spoken patterns over names or facts. For each give "en", a natural Korean meaning "ko", and "line" (1-based).
+DIALOGUE:
+${o.map((l,i)=>`${i+1}. ${l.sp}: ${l.tx}`).join("\n")}
+Reply with only JSON: {"phrases":[{"en":"...","ko":"...","line":1}]}`;
+  try{const r=await sample.json(prompt,{signal:ctl3.signal});
+    if(!r||!Array.isArray(r.phrases))throw{code:"invalid_json"};
+    L.phrases=r.phrases.map(p=>({en:String(p.en||""),ko:String(p.ko||""),line:+p.line||0})).filter(p=>p.en&&p.ko);phOrder=null;
+    await persist();renderPh();resetP();$("#phUnshuffle").hidden=true;$("#phStatus").textContent=`${L.phrases.length}개를 만들었습니다. '카드로 연습 시작'을 누르세요.`;
+  }catch(e){$("#phStatus").textContent=e.code==="cancelled"?"":errMsg(e.code)}
+  finally{$("#doPh").disabled=!sample}};
+$("#phShuffle").onclick=()=>{if(!L.phrases)return;phOrder=L.phrases.map((_,i)=>i);for(let i=phOrder.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[phOrder[i],phOrder[j]]=[phOrder[j],phOrder[i]]}renderPh(true);resetP();syncShuffleBtn();saveProg()};
+
+/* ---------- STEP 4 ---------- */
+let i4=0,run4=false;
+function reset4(){i4=0;run4=false;$("#turns4").innerHTML="";$("#my4").hidden=true;$("#st4").textContent="역할을 고르고 '처음부터'를 누르세요. 끝나면 역할을 바꿔 다시 하세요."}
+function addTurn(l,me){const d=turnEl(l,me?"me":"");$("#turns4").append(d);d.scrollIntoView({block:"nearest"})}
+async function step4(){const me=$("#role4").value;
+  while(i4<L.work.length&&L.work[i4].sp!==me){const l=L.work[i4];addTurn(l,false);if($("#speak4").checked)await speak(l.tx,l.sp,L.work);if(!run4)return;i4++}
+  if(i4>=L.work.length){$("#my4").hidden=true;$("#st4").textContent="끝까지 했습니다. 역할을 바꿔서 다시 해 보세요.";run4=false;return}
+  const k=L.ko&&L.ko[i4];$("#my4").hidden=false;$("#my4Label").textContent=`${i4+1}번 줄 · 내 차례 (${me})`;
+  $("#my4Hint").innerHTML=$("#hint4").checked&&k?`<span>${esc(k)}</span>`:"";$("#ans4").value="";$("#fb4").innerHTML="";$("#my4").dispatchEvent(new Event("ask:reset"));$("#ans4").focus({preventScroll:true});saveProg()}
+$("#start4").onclick=()=>{if(synth)synth.cancel();reset4();run4=true;$("#st4").textContent="";step4()};
+$("#role4").onchange=reset4;
+$("#check4").onclick=()=>{stopRec();const l=L.work[i4];if(!l)return;const r=compare([l],$("#ans4").value);showFb($("#fb4"),r,[l],true);
+  if(!r.errs.length&&r.saidCount){addTurn(l,true);i4++;$("#my4").hidden=true;setTimeout(step4,500)}};
+$("#peek4").onclick=()=>{const l=L.work[i4];if(l)$("#fb4").innerHTML=`<div class="fb" style="background:var(--accent-soft)">${esc(l.tx)}</div>`};
+$("#skip4").onclick=()=>{stopRec();const l=L.work[i4];if(!l)return;addTurn(l,true);i4++;$("#my4").hidden=true;step4()};
+
+/* ---------- STEP 5 (line by line, both roles) ---------- */
+let i5=0,miss5=0;
+function reset5(){i5=0;miss5=0;$("#turns5").innerHTML="";$("#my5").hidden=true;$("#st5").textContent="'처음부터'를 누르면 첫 줄부터 시작합니다."}
+function show5(){
+  if(i5>=L.work.length){$("#my5").hidden=true;$("#st5").textContent=`끝까지 했습니다. ${L.work.length}줄 중 ${L.work.length-miss5}줄을 한 번에 맞혔어요.`;return}
+  const l=L.work[i5],k=L.ko&&L.ko[i5];$("#my5").hidden=false;$("#st5").textContent="";
+  $("#my5Label").textContent=`${i5+1} / ${L.work.length}번 줄 · ${l.sp}`;
+  $("#my5Hint").innerHTML=$("#hint5").checked&&k?`<span>${esc(k)}</span>`:"";
+  $("#ans5").value="";$("#fb5").innerHTML="";$("#my5").dispatchEvent(new Event("ask:reset"));saveProg();delete $("#my5").dataset.missed;$("#ans5").focus({preventScroll:true})}
+function next5(){const l=L.work[i5];if(!l)return;const d=turnEl(l,speakers(L.work).indexOf(l.sp)===1?"me":"");$("#turns5").append(d);d.scrollIntoView({block:"nearest"});i5++;$("#my5").hidden=true;show5()}
+$("#start5").onclick=()=>{reset5();show5()};
+$("#hint5").onchange=()=>{if(!$("#my5").hidden)$("#my5Hint").innerHTML=$("#hint5").checked&&L.ko&&L.ko[i5]?`<span>${esc(L.ko[i5])}</span>`:""};
+$("#check5").onclick=()=>{stopRec();const l=L.work[i5];if(!l)return;const r=compare([l],$("#ans5").value);showFb($("#fb5"),r,[l],true);
+  if(!r.errs.length&&r.saidCount)setTimeout(next5,500);else if(r.saidCount&&!$("#my5").dataset.missed){$("#my5").dataset.missed="1";miss5++}};
+$("#peek5").onclick=()=>{const l=L.work[i5];if(!l)return;$("#fb5").innerHTML=`<div class="fb" style="background:var(--accent-soft)">${esc(l.tx)}</div>`;if(!$("#my5").dataset.missed){$("#my5").dataset.missed="1";miss5++}};
+$("#skip5").onclick=()=>{stopRec();if(!L.work[i5])return;if(!$("#my5").dataset.missed)miss5++;next5()};
+/* ---------- STEP 6 ---------- */
+const player=$("#player");let aURL=null,stop6=false;
+$("#audioFile").onchange=e=>{const f=e.target.files[0];if(!f)return;if(aURL)URL.revokeObjectURL(aURL);aURL=URL.createObjectURL(f);player.src=aURL;player.hidden=false;player.playbackRate=+$("#rate").value;player.preservesPitch=true;player.loop=$("#loop6").checked};
+$("#rate").oninput=()=>{const v=+$("#rate").value;$("#rateVal").textContent=v.toFixed(2)+"×";player.playbackRate=v};
+$("#loop6").onchange=()=>{player.loop=$("#loop6").checked};
+$("#which6").onchange=render6;
+$("#saveAudioLink").onclick=async()=>{L.audioLink=$("#audioLink").value.trim();await persist();render6()};
+$("#tts6").onclick=async()=>{const list=$("#which6").value==="work"?L.work:base();if(!list.length)return;if(synth)synth.cancel();stop6=false;$("#tts6").disabled=true;
+  do{for(let i=0;i<list.length&&!stop6;i++){$$("#list6 .ln").forEach(n=>n.classList.toggle("cur",+n.dataset.i===i));await speak(list[i].tx,list[i].sp,list,+$("#rate").value);await new Promise(r=>setTimeout(r,350))}}while($("#loop6").checked&&!stop6);
+  $$("#list6 .ln").forEach(n=>n.classList.remove("cur"));$("#tts6").disabled=false};
+$("#stop6").onclick=()=>{stop6=true;if(synth)synth.cancel();player.pause()};
+
+/* ---------- ask a question ---------- */
+const CATS={"문법":"","표현":"c2","문화":"c3"};
+function cleanMd(t){return t.replace(/^#{1,6}\s*/gm,"").replace(/\*\*(.+?)\*\*/g,"$1").replace(/(^|\s)\*(\S.*?)\*/g,"$1$2")}
+function buildAsk(cardSel,ansSel,getLine,afterRow,opts){
+  opts=opts||{};const card=$(cardSel),row=$(afterRow).closest(".row");
+  const b=document.createElement("button");b.className="ghost";b.type="button";b.textContent="질문하기";if(!opts.noButton)row.append(b);
+  const box=document.createElement("div");box.className="ask";box.hidden=true;
+  box.innerHTML=`<div class="quote"></div><textarea rows="2" placeholder="예: 여기서 'I'm from'이랑 'I come from'은 뭐가 달라요? / 'That's where they first met'을 'That's where they met first'라고 해도 돼요?"></textarea>
+  <div class="row"><button class="mic" type="button" data-mixed="1">🎙 말하기</button><button class="primary" data-go>물어보기</button><button class="ghost" data-stop hidden>멈추기</button><button class="ghost" data-close>닫기</button><span class="status" data-st></span></div><div class="answer" hidden></div>`;
+  card.append(box);
+  const q=box.querySelector("textarea"),out=box.querySelector(".answer"),st=box.querySelector("[data-st]"),go=box.querySelector("[data-go]"),stop=box.querySelector("[data-stop]");
+  let ctl=null;
+  const refreshQuote=()=>{const l=getLine();box.querySelector(".quote").innerHTML=l?`<b>${esc(l.sp)}:</b> ${esc(l.tx)}`:""};
+  b.onclick=()=>{box.hidden=!box.hidden;if(!box.hidden){refreshQuote();q.focus()}};
+  box.querySelector("[data-close]").onclick=()=>{if(opts.onClose)opts.onClose();else box.hidden=true};
+  stop.onclick=()=>ctl&&ctl.abort();
+  card.addEventListener("ask:reset",()=>{box.hidden=true;q.value="";out.hidden=true;out.textContent="";st.textContent=""});
+  go.onclick=async()=>{
+    const l=getLine(),question=q.value.trim(),said=$(ansSel).value.trim();
+    if(!question){st.textContent="질문을 적어 주세요.";return}
+    if(!sample){st.textContent="이 화면에서는 AI를 쓸 수 없습니다.";return}
+    ctl=new AbortController();go.disabled=true;stop.hidden=false;out.hidden=false;out.textContent="생각하는 중…";st.textContent="";
+    let idx=L.work.indexOf(l),ctx;
+    if(l&&l.src){const o=base(),k=(l.no||1)-1;idx=k;ctx=o.slice(Math.max(0,k-1),k+2).map(x=>x.sp+": "+x.tx).join("\n")}
+    else if(l&&l.fromBase){const o=base(),k=l.no-1;idx=k;ctx=o.slice(Math.max(0,k-2),k+2).map(x=>x.sp+": "+x.tx).join("\n")}
+    else ctx=L.work.slice(Math.max(0,idx-2),idx+2).map(x=>x.sp+": "+x.tx).join("\n");
+    const prompt=`당신은 한국인 성인 영어 학습자를 돕는 영어 선생님입니다. 학습자는 영어 대화문을 통째로 외우는 중이고, 외우다가 생긴 궁금증을 묻습니다.
+답변 규칙:
+- 한국어로, 핵심부터 짧고 명확하게 (보통 4~10문장).
+- 문법 질문이면 규칙과 이유, 자연스러운지/틀렸는지, 바꿔 써도 되는 표현과 뉘앙스 차이를 설명.
+- 표현·문화 질문이면 실제 원어민이 언제 어떻게 쓰는지, 상황과 느낌을 설명.
+- 영어 예문을 1~3개 들어 주세요.
+- 학습자가 말한 문장이 있으면 그것이 맞는지도 짚어 주세요.
+- 마크다운 제목이나 표는 쓰지 말고 일반 문단과 짧은 목록만 쓰세요.
+수업: ${L.title}
+${l&&l.src?`외우는 핵심 구문(정답): ${l.tx}  (뜻: ${l.ko})
+학습자는 한국어 뜻만 보고 이 구문을 영어로 떠올려 말했습니다. 정답과 다르면, 학습자 문장이 틀린 것인지 / 맞지만 뉘앙스·쓰임이 다른 것인지 먼저 분명히 말해 주세요.
+구문이 나온 대사: ${l.src.sp}: ${l.src.tx}`:`질문한 대사: ${l?l.sp+": "+l.tx:"(없음)"}`}
+앞뒤 대화:
+${ctx}
+학습자가 말한 문장: ${said||"(없음)"}
+질문: ${question}`;
+    let answer="";
+    try{const r=await sample(prompt,{signal:ctl.signal,cache:false,onText:({text})=>{out.textContent=cleanMd(text)}});answer=cleanMd(r.text);out.textContent=answer}
+    catch(e){out.textContent=e.text?cleanMd(e.text):"";if(e.code!=="cancelled")st.textContent=errMsg(e.code);go.disabled=false;stop.hidden=true;return}
+    go.disabled=false;stop.hidden=true;st.textContent="노트에 정리하는 중…";
+    let meta={title:question.slice(0,40),summary:"",category:"문법"};
+    try{const m=await sample.json(`아래 영어 학습 질문과 답변을 노트용으로 정리하세요.
+"title": 다른 수업에서도 찾아보기 쉬운 주제 이름 (한국어, 15자 이내, 예: "현재완료 have p.p.", "from의 쓰임", "No kidding의 뉘앙스")
+"summary": 답변의 핵심을 2~3문장으로 (한국어)
+"category": "문법", "표현", "문화" 중 하나
+${l&&l.src?`핵심 구문: ${l.tx}`:`질문한 대사: ${l?l.sp+": "+l.tx:""}`}
+학습자가 말한 문장: ${said||"(없음)"}
+질문: ${question}
+답변: ${answer}
+JSON만 답하세요: {"title":"...","summary":"...","category":"문법"}`,{modelTier:"quick",cache:false});
+      if(m&&m.title)meta={title:String(m.title).slice(0,60),summary:String(m.summary||""),category:CATS[m.category]!==undefined?m.category:"문법"}}catch(e){}
+    const n={id:"n"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),created:Date.now(),lessonId:L.id,lessonTitle:L.title,
+      line:l?(l.src?{sp:l.src.sp,tx:l.src.tx,no:l.no}:{sp:l.sp,tx:l.tx,no:idx+1}):null,phrase:l&&l.src?{en:l.tx,ko:l.ko}:null,said,question,answer,...meta};
+    await Notes.save(n);renderNotes();st.innerHTML=`문법 노트에 저장했습니다: <b>${esc(n.title)}</b>`;q.value="";
+  };
+  return{open(text){refreshQuote();box.hidden=false;if(text)q.value=text;q.focus();box.scrollIntoView({block:"nearest"})}};
+}
+buildAsk("#my4","#ans4",()=>L.work[i4],"#skip4");
+/* ---------- phrase cards ---------- */
+let iP=0,missP=0,onP=false;
+const pOrder=()=>phOrder&&L.phrases&&phOrder.length===L.phrases.length?phOrder:(L.phrases||[]).map((_,i)=>i);
+function curPh(){const ord=pOrder();const p=L.phrases&&L.phrases[ord[iP]];if(!p)return null;const o=base();return{sp:"핵심 구문",tx:p.en,ko:p.ko,no:p.line||0,src:o[(p.line||1)-1]||{sp:"",tx:p.en}}}
+const askP=buildAsk("#phCard","#ansP",curPh,"#skipP");
+/* ---------- ask about any sentence ---------- */
+let qTarget=null;
+const askAny=buildAsk("#qInner","#qSaid",()=>qTarget,"#qAnchor",{noButton:true,onClose:()=>closeQ()});
+function closeQ(){$("#qSheet").hidden=true;qTarget=null}
+$("#qClose").onclick=closeQ;
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#qSheet").hidden)closeQ()});
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-q]");if(!b||!L)return;e.preventDefault();e.stopPropagation();
+  const i=+b.dataset.q;let l;
+  if(b.dataset.src==="base"){const o=base()[i];if(!o)return;l={sp:o.sp,tx:o.tx,no:i+1,fromBase:true}}else{l=L.work[i];if(!l)return}
+  qTarget=l;$("#qInner").dispatchEvent(new Event("ask:reset"));
+  const cur=!$("#my4").hidden&&L.work[i4]===l?$("#ans4").value:!$("#my5").hidden&&L.work[i5]===l?$("#ans5").value:"";$("#qSaid").value=cur.trim();
+  $("#qSheet").hidden=false;askAny.open()},true);
+function resetP(){iP=0;missP=0;onP=false;$("#phCard").hidden=true;$("#stP").textContent=""}
+function showP(){
+  const n=(L.phrases||[]).length;if(!n){resetP();$("#stP").textContent="먼저 '핵심 구문 만들기'를 눌러 주세요.";return}
+  if(iP>=n){$("#phCard").hidden=true;onP=false;$("#stP").textContent=`끝까지 했습니다. ${n}개 중 ${n-missP}개를 한 번에 맞혔어요.`;saveProg();return}
+  const c=curPh();onP=true;$("#phCard").hidden=false;$("#stP").textContent="";
+  $("#phLabel").textContent=`${iP+1} / ${n}`;$("#prevP").disabled=iP===0;$("#prevP2").disabled=iP===0;$("#phKo").textContent=c.ko;
+  $("#ansP").value="";$("#fbP").innerHTML="";$("#revP").hidden=true;$("#whyP").hidden=true;delete $("#phCard").dataset.missed;
+  $("#phCard").dispatchEvent(new Event("ask:reset"));$("#ansP").focus({preventScroll:true});saveProg()}
+function revealP(){const c=curPh();if(!c)return;$("#revEn").textContent=c.tx;$("#revSrc").innerHTML=c.src&&c.src.sp?`<b>${esc(c.src.sp)}:</b> ${esc(c.src.tx)}`:"";$("#revP").hidden=false}
+function markMissP(){if(!$("#phCard").dataset.missed){$("#phCard").dataset.missed="1";missP++}}
+$("#startP").onclick=()=>{resetP();showP()};
+$("#checkP").onclick=()=>{stopRec();const c=curPh();if(!c)return;const r=compare([{sp:"",tx:c.tx}],$("#ansP").value);showFb($("#fbP"),r,[{sp:"",tx:c.tx}],true);
+  if(!r.saidCount)return;revealP();const wrong=r.errs.length>0;$("#whyP").hidden=!wrong;if(wrong)markMissP();saveProg()};
+$("#redoP").onclick=()=>{stopRec();$("#ansP").value="";$("#fbP").innerHTML="";$("#revP").hidden=true;$("#whyP").hidden=true;$("#ansP").focus();saveProg()};
+$("#peekP").onclick=()=>{revealP();markMissP()};
+$("#skipP").onclick=()=>{stopRec();if(!curPh())return;markMissP();iP++;showP()};
+$("#nextP").onclick=()=>{stopRec();iP++;showP()};
+const prevP=()=>{stopRec();if(iP>0){iP--;showP()}};$("#prevP").onclick=prevP;$("#prevP2").onclick=prevP;
+function syncShuffleBtn(){$("#phUnshuffle").hidden=!phOrder||phOrder.every((v,i)=>v===i)}
+$("#phUnshuffle").onclick=()=>{phOrder=null;renderPh(true);resetP();syncShuffleBtn();saveProg()};
+$("#whyP").onclick=()=>{const c=curPh(),said=$("#ansP").value.trim();if(!c)return;
+  askP.open(`제가 말한 "${said}"와 정답 "${c.tx}"은 왜 다른가요? 제 문장도 쓸 수 있나요?`)};
+buildAsk("#my5","#ans5",()=>L.work[i5],"#skip5");
+
+/* ---------- notebook view ---------- */
+let noteDel=null;
+$("#toggleNotes").onclick=()=>{const c=$("#notesCard");c.hidden=!c.hidden;$("#toggleNotes").textContent=c.hidden?"문법 노트":"노트 닫기";if(!c.hidden){renderNotes();c.scrollIntoView({block:"start"})}};
+$("#notesSearch").oninput=renderNotes;$("#notesCat").onchange=renderNotes;
+function renderNotes(){
+  const all=Object.values(Notes.items).sort((a,b)=>b.created-a.created);
+  const q=$("#notesSearch").value.trim().toLowerCase(),cat=$("#notesCat").value;
+  const list=all.filter(n=>(!cat||n.category===cat)&&(!q||[n.title,n.summary,n.question,n.answer,n.line&&n.line.tx,n.lessonTitle].join(" ").toLowerCase().includes(q)));
+  $("#notesCount").textContent=all.length?`${all.length}개`:"";
+  $("#notesList").innerHTML=list.length?list.map(n=>`<article class="note">
+    <div class="top"><span class="ttl">${esc(n.title)}</span><span class="cat ${CATS[n.category]||""}">${esc(n.category||"문법")}</span></div>
+    ${n.phrase?`<div><span class="label">핵심 구문</span> <span class="said" style="color:var(--accent)">${esc(n.phrase.en)}</span> <span class="meta">${esc(n.phrase.ko)}</span></div>`:""}
+    ${n.said&&n.phrase?`<div class="meta">내가 말한 것: <span class="said">${esc(n.said)}</span></div>`:""}
+    ${n.line?`<div class="quote"><b>${esc(n.line.sp)}:</b> ${esc(n.line.tx)}</div>`:""}
+    ${n.summary?`<div>${esc(n.summary)}</div>`:""}
+    <details><summary>질문과 답변 전체</summary><div style="display:flex;flex-direction:column;gap:6px;margin-top:6px"><div><b>Q.</b> ${esc(n.question)}</div>${n.said?`<div class="meta">내가 말한 문장: <span class="said">${esc(n.said)}</span></div>`:""}<div class="answer">${esc(n.answer)}</div></div></details>
+    <div class="row" style="justify-content:space-between"><span class="meta">${esc(n.lessonTitle||"")}${n.line?` · ${n.line.no}번 줄`:""} · ${new Date(n.created).toLocaleDateString("ko-KR")}</span><button class="ghost danger" data-ndel="${esc(n.id)}">${noteDel===n.id?"삭제 확인":"삭제"}</button></div>
+  </article>`).join(""):`<p class="hint">${all.length?"찾는 노트가 없습니다.":"아직 노트가 없습니다. 주고받기나 혼자 말하기에서 '질문하기'를 눌러 보세요."}</p>`;
+  $$("#notesList [data-ndel]").forEach(b=>b.onclick=async()=>{const id=b.dataset.ndel;if(noteDel!==id){noteDel=id;renderNotes();return}noteDel=null;await Notes.remove(id);renderNotes()});
+}
+
+["4","5"].forEach(n=>{$("#redo"+n).onclick=()=>{stopRec();$("#ans"+n).value="";$("#fb"+n).innerHTML="";$("#ans"+n).focus();saveProg()}});
+/* ---------- keep progress across app switches / reloads ---------- */
+let restoring=false,progT=null;
+function saveProg(){
+  if(restoring||!L||!L.work)return;
+  const p={t:Date.now(),step:curStep,r4:$("#role4").value,i4,on4:run4||i4>0,a4:$("#ans4").value,
+    i5,miss5,on5:!$("#my5").hidden||i5>0,a5:$("#ans5").value,work:$("#work").value,iP,missP,onP,aP:$("#ansP").value,phOrder};
+  local.set("prog:"+L.id,p);L.progress=p;
+  if(!L.example){clearTimeout(progT);progT=setTimeout(()=>persist(),1500)}
+}
+function restoreProg(){
+  const a=local.get("prog:"+L.id),b=L.progress;const p=[a,b].filter(Boolean).sort((x,y)=>(y.t||0)-(x.t||0))[0];
+  if(!p)return;restoring=true;
+  try{
+    if(p.work&&p.work.trim()&&p.work!==$("#work").value){$("#work").value=p.work;renderSpNames();renderDiff()}
+    if(p.r4&&[...$("#role4").options].some(o=>o.value===p.r4))$("#role4").value=p.r4;
+    if(p.on4&&L.work.length){reset4();run4=true;$("#st4").textContent="";i4=Math.min(p.i4||0,L.work.length);
+      for(let k=0;k<i4;k++)addTurn(L.work[k],L.work[k].sp===p.r4);
+      const me=$("#role4").value;while(i4<L.work.length&&L.work[i4].sp!==me){addTurn(L.work[i4],false);i4++}
+      if(i4<L.work.length){step4();if(p.a4)$("#ans4").value=p.a4}else{run4=false;$("#st4").textContent="끝까지 했습니다. 역할을 바꿔서 다시 해 보세요."}}
+    if(p.on5&&L.work.length){reset5();i5=Math.min(p.i5||0,L.work.length);miss5=p.miss5||0;
+      for(let k=0;k<i5;k++){const l=L.work[k];$("#turns5").append(turnEl(l,speakers(L.work).indexOf(l.sp)===1?"me":""))}
+      show5();if(p.a5)$("#ans5").value=p.a5}
+    if(Array.isArray(p.phOrder)&&L.phrases&&p.phOrder.length===L.phrases.length){phOrder=p.phOrder;renderPh(true)}
+    syncShuffleBtn();
+    if(p.onP&&L.phrases&&L.phrases.length){iP=Math.min(p.iP||0,L.phrases.length);missP=p.missP||0;showP();if(p.aP)$("#ansP").value=p.aP}
+    if(p.step)go(p.step);
+  }finally{restoring=false}
+  saveProg();
+}
+let inT=null;["ans4","ans5","ansP","work"].forEach(id=>$("#"+id).addEventListener("input",()=>{clearTimeout(inT);inT=setTimeout(saveProg,400)}));
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveProg()});
+window.addEventListener("pagehide",saveProg);
+$("#start4").addEventListener("click",()=>setTimeout(saveProg,0));
+$("#start5").addEventListener("click",()=>setTimeout(saveProg,0));
+$("#role4").addEventListener("change",saveProg);
+
+/* ---------- settings ---------- */
+const DEF_MODELS=["gemini-2.5-flash","gemini-2.5-flash-lite"];
+function verOf(n){const m=n.match(/gemini-(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0}
+function fillModels(){const list=local.get("gmodels")||DEF_MODELS;
+  const opt=(sel,cur)=>{const l=list.includes(cur)?list:[cur,...list];sel.innerHTML=l.map(n=>`<option ${n===cur?"selected":""}>${esc(n)}</option>`).join("")};
+  opt($("#gModel"),G.model);opt($("#gQuick"),G.quick)}
+function syncKeyUI(){const has=!!G.key;$("#keyBanner").hidden=has;$("#noAi1").hidden=has;$("#noAi2").hidden=has}
+$("#toggleSet").onclick=()=>{const c=$("#setCard");c.hidden=!c.hidden;if(!c.hidden){$("#gKey").value=G.key;fillModels();renderUsage();
+  const st=local.get("stt")||"chrome";$("#sttChrome").checked=st==="chrome";$("#sttGemini").checked=st==="gemini";c.scrollIntoView({block:"start"})}};
+$("#gModel").onchange=()=>local.set("gmodel",$("#gModel").value);
+$("#gQuick").onchange=()=>local.set("gquick",$("#gQuick").value);
+$$('input[name="stt"]').forEach(r=>r.onchange=()=>{if(r.checked)local.set("stt",r.value)});
+$("#gKeySave").onclick=async()=>{const k=$("#gKey").value.trim();if(!k){local.set("gkey","");syncKeyUI();$("#gKeyStatus").textContent="키를 지웠습니다.";return}
+  $("#gKeySave").disabled=true;$("#gKeyStatus").textContent="확인 중…";
+  try{const res=await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",{headers:{"x-goog-api-key":k}});
+    if(!res.ok){$("#gKeyStatus").textContent=res.status===400||res.status===401||res.status===403?"키가 올바르지 않습니다. 복사할 때 빠진 글자가 없는지 확인해 주세요.":"확인하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요.";return}
+    const j=await res.json();const names=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent")).map(m=>m.name.replace(/^models\//,""))
+      .filter(n=>/^gemini-/.test(n)&&/flash/.test(n)&&!/(image|tts|live|audio|thinking|embedding|exp|robotics|computer)/.test(n));
+    if(!names.length){$("#gKeyStatus").textContent="이 키로 쓸 수 있는 Gemini Flash 모델을 찾지 못했습니다.";return}
+    names.sort((a,b)=>verOf(b)-verOf(a)||(/preview/.test(a)-/preview/.test(b))||a.localeCompare(b));
+    local.set("gkey",k);local.set("gmodels",names);
+    const pick=(re,ex)=>names.find(n=>re.test(n)&&!ex.test(n)&&!/preview/.test(n))||names.find(n=>re.test(n)&&!ex.test(n));
+    if(!names.includes(local.get("gmodel")))local.set("gmodel",pick(/flash/,/lite/)||names[0]);
+    if(!names.includes(local.get("gquick")))local.set("gquick",pick(/flash-lite/,/^$/)||G.model);
+    fillModels();syncKeyUI();$("#gKeyStatus").textContent=`저장했습니다. 쓸 수 있는 모델 ${names.length}개를 찾았습니다.`;
+  }catch(e){$("#gKeyStatus").textContent="확인하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요."}
+  finally{$("#gKeySave").disabled=false}};
+/* ---------- export / import ---------- */
+$("#expBtn").onclick=()=>{const data={app:"tongamgi",version:1,exported:Date.now(),lessons:Lib.items,notes:Notes.items};
+  const blob=new Blob([JSON.stringify(data,null,1)],{type:"application/json"}),a=document.createElement("a"),d=new Date();
+  a.href=URL.createObjectURL(blob);a.download=`통암기-백업-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}.json`;
+  document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);
+  $("#ioStatus").textContent=`수업 ${Object.keys(Lib.items).length}개, 노트 ${Object.keys(Notes.items).length}개를 내보냈습니다.`};
+$("#impFile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+  try{const d=JSON.parse(await f.text());if(!d||(!d.lessons&&!d.notes))throw 0;let nl=0,nn=0;
+    Object.values(d.lessons||{}).forEach(x=>{if(!x||!x.id||!x.src)return;const cur=Lib.items[x.id];if(!cur||(x.updated||0)>=(cur.updated||0)){Lib.items[x.id]=x;nl++}});
+    Object.values(d.notes||{}).forEach(x=>{if(!x||!x.id)return;if(!Notes.items[x.id]){Notes.items[x.id]=x;nn++}});
+    local.set("lessons",Lib.items);local.set("notes",Notes.items);renderMine();renderCatalog();renderNotes();
+    if(L&&L.example){const ids=Object.keys(Lib.items);if(ids.length)openLesson(JSON.parse(JSON.stringify(Lib.items[ids[0]])))}
+    $("#ioStatus").textContent=`수업 ${nl}개, 노트 ${nn}개를 가져왔습니다.`}
+  catch(err){$("#ioStatus").textContent="가져오지 못했습니다. 이 앱이나 Claude 연습장에서 내보낸 파일인지 확인해 주세요."}};
+syncKeyUI();
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+/* ---------- boot ---------- */
+openLesson(example());renderCatalog();go(local.get("step")||"s3");
+Lib.init().then(async()=>{await Notes.init();renderNotes();const ids=Object.keys(Lib.items);let cur=local.get("current");
+  if(!Lib.items[cur])cur=Lib.state&&Lib.state.current;
+  if(!Lib.items[cur])cur=ids.sort((a,b)=>((Lib.items[b].progress&&Lib.items[b].progress.t)||Lib.items[b].updated||0)-((Lib.items[a].progress&&Lib.items[a].progress.t)||Lib.items[a].updated||0))[0];
+  if(cur&&Lib.items[cur])openLesson(JSON.parse(JSON.stringify(Lib.items[cur])));else{renderMine();if($("#lib").hidden)$("#toggleLib").click()}renderCatalog()});
+})();
+</script>
+</body>
+</html>
