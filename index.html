@@ -712,22 +712,35 @@ function bump(){const u=local.get("usage")||{};if(u.d!==today()){u.d=today();u.n
 function renderUsage(){const u=local.get("usage")||{};const n=u.d===today()?u.n:0;
   $("#usageTxt").textContent=`오늘 ${n}회 사용했습니다. 무료 한도는 모델마다 다르고 구글이 바꾸기도 해서, 정확한 숫자는 Google AI Studio의 사용량 화면에서 확인할 수 있어요.`}
 const gText=j=>((j&&j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join("");
+let lastErr="";
 async function gCall(parts,{model,json,signal,onText}={}){
-  if(!G.key)throw{code:"no_key"};
-  const stream=!!onText&&!json,m=model||G.model;
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:${stream?"streamGenerateContent?alt=sse":"generateContent"}`;
+  if(!G.key)throw{code:"no_key"};lastErr="";
+  const stream=!!onText&&!json,first=model||G.model;
   const body={contents:[{role:"user",parts}]};if(json)body.generationConfig={responseMimeType:"application/json"};
-  bump();let res;
-  try{res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":G.key},body:JSON.stringify(body),signal})}
-  catch(e){throw{code:e&&e.name==="AbortError"?"cancelled":"upstream_error"}}
-  if(!res.ok){let msg="";try{const j=await res.json();msg=(j.error&&j.error.message)||""}catch(e){}
-    throw{code:res.status===429?"rate_limited":(res.status===400&&/api key/i.test(msg))||res.status===401||res.status===403?"bad_key":res.status===404?"bad_model":"upstream_error",message:msg}}
+  const pool=[first,...(local.get("gmodels")||DEF_MODELS).filter(n=>n!==first)].slice(0,4);
+  let res=null,err=null;
+  for(let k=0;k<pool.length&&!res;k++){const m=pool[k];
+    const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:${stream?"streamGenerateContent?alt=sse":"generateContent"}`;
+    for(let tries=0;tries<2;tries++){
+      bump();let r;
+      try{r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":G.key},body:JSON.stringify(body),signal})}
+      catch(e){if(e&&e.name==="AbortError")throw{code:"cancelled"};lastErr="인터넷 연결이 끊겼거나 요청이 차단되었습니다";throw{code:"upstream_error"}}
+      if(r.ok){res=r;if(m!==first)local.set("lastFallback",m);break}
+      let msg="",st="";try{const j=await r.json();msg=(j.error&&j.error.message)||"";st=(j.error&&j.error.status)||""}catch(e){}
+      lastErr=`${r.status}${st?" "+st:""}${msg?": "+msg.slice(0,160):""} (모델 ${m})`;
+      if(r.status===401||((r.status===400||r.status===403)&&/api key/i.test(msg)))throw{code:"bad_key"};
+      if(r.status===403&&/(not been used|disabled|SERVICE_DISABLED)/i.test(msg))throw{code:"api_off"};
+      err={code:r.status===429?"rate_limited":"upstream_error"};
+      if([500,502,503,504].includes(r.status)&&tries===0){await new Promise(z=>setTimeout(z,1500));continue}
+      break}
+    if(signal&&signal.aborted)throw{code:"cancelled"}}
+  if(!res)throw err||{code:"upstream_error"};
   if(!stream){const j=await res.json();const t=gText(j);if(!t)throw{code:j.promptFeedback&&j.promptFeedback.blockReason?"refused":"empty_completion"};return t}
   const rd=res.body.getReader(),dec=new TextDecoder();let buf="",text="";
   try{for(;;){const {value,done}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
     while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(!line.startsWith("data:"))continue;
       try{const d=gText(JSON.parse(line.slice(5)));if(d){text+=d;onText({text,delta:d})}}catch(e){}}}}
-  catch(e){throw{code:e&&e.name==="AbortError"?"cancelled":"upstream_error",text}}
+  catch(e){if(!(e&&e.name==="AbortError"))lastErr="답변을 받는 중에 연결이 끊겼습니다";throw{code:e&&e.name==="AbortError"?"cancelled":"upstream_error",text}}
   if(!text)throw{code:"empty_completion"};return text}
 let sample=async(input,opts={})=>({text:await gCall([{text:String(input)}],{signal:opts.signal,onText:opts.onText,model:opts.modelTier==="quick"?G.quick:G.model}),truncated:false});
 sample.json=async(input,opts={})=>{const t=await gCall([{text:String(input)}],{json:true,signal:opts.signal,model:opts.modelTier==="quick"?G.quick:G.model});
@@ -750,7 +763,7 @@ async function transcribe(blob,mixed){
     :"This is an English learner speaking English. Transcribe exactly what was said, word for word. Do NOT correct grammar, word choice or mistakes, do not complete unfinished sentences, and keep repeated or stumbled words. Reply with the transcript only, no quotes or notes. If nothing intelligible was said, reply with an empty string.";
   const t=await gCall([{inlineData:{mimeType:"audio/wav",data:await toB64(wav)}},{text:prompt}],{model:G.quick});
   return t.replace(/^["“]|["”]$/g,"").trim()}
-const errMsg=c=>({no_key:"⚙ 설정에서 Gemini API 키를 먼저 넣어 주세요.",bad_key:"API 키가 올바르지 않습니다. ⚙ 설정에서 다시 확인해 주세요.",bad_model:"선택한 모델을 쓸 수 없습니다. ⚙ 설정에서 '저장하고 확인'을 눌러 모델을 다시 고르세요.",audio_error:"녹음을 처리하지 못했습니다. 다시 말해 주세요.",empty_completion:"답이 비어 있었습니다. 다시 시도해 주세요.",not_granted:"AI 사용이 허용되지 않아 이 기능을 쓸 수 없습니다.",rate_limited:"무료 사용 한도에 도달했거나 요청이 너무 잦습니다. 잠시 뒤(또는 내일) 다시 해 주세요.",invalid_json:"결과 형식이 맞지 않았습니다. 다시 눌러 주세요.",session_expired:"다시 로그인해야 합니다.",refused:"이 내용으로는 만들 수 없었습니다. 요청을 바꿔 다시 시도해 주세요."}[c]||"연결에 문제가 있었습니다. 다시 눌러 주세요.");
+const errMsg=c=>(c==="upstream_error"&&lastErr?`Gemini 연결에 실패했습니다: ${lastErr}`:null)||({api_off:"이 키의 구글 프로젝트에서 Gemini API가 꺼져 있습니다. AI Studio에서 키를 새로 만들어 주세요.",no_key:"⚙ 설정에서 Gemini API 키를 먼저 넣어 주세요.",bad_key:"API 키가 올바르지 않습니다. ⚙ 설정에서 다시 확인해 주세요.",bad_model:"선택한 모델을 쓸 수 없습니다. ⚙ 설정에서 '저장하고 확인'을 눌러 모델을 다시 고르세요.",audio_error:"녹음을 처리하지 못했습니다. 다시 말해 주세요.",empty_completion:"답이 비어 있었습니다. 다시 시도해 주세요.",not_granted:"AI 사용이 허용되지 않아 이 기능을 쓸 수 없습니다.",rate_limited:"무료 사용 한도에 도달했거나 요청이 너무 잦습니다. 잠시 뒤(또는 내일) 다시 해 주세요.",invalid_json:"결과 형식이 맞지 않았습니다. 다시 눌러 주세요.",session_expired:"다시 로그인해야 합니다.",refused:"이 내용으로는 만들 수 없었습니다. 요청을 바꿔 다시 시도해 주세요."}[c]||"연결에 문제가 있었습니다. 다시 눌러 주세요.");
 
 /* ---------- rendering ---------- */
 function lineHTML(l,i,list,inner){const sp=speakers(list),src=list===L.work?"work":"base";return `<div class="ln" data-i="${i}"><span class="num">${i+1}</span><span class="sp ${sp.indexOf(l.sp)===1?"b":""}">${esc(l.sp)}</span><span class="tx">${inner==null?esc(l.tx):inner}</span><button type="button" class="qbtn" data-q="${i}" data-src="${src}" title="이 문장에 질문하기" aria-label="${i+1}번 문장에 질문하기">?</button></div>`}
@@ -970,7 +983,7 @@ ${ctx}
 질문: ${question}`;
     let answer="";
     try{const r=await sample(prompt,{signal:ctl.signal,cache:false,onText:({text})=>{out.textContent=cleanMd(text)}});answer=cleanMd(r.text);out.textContent=answer}
-    catch(e){out.textContent=e.text?cleanMd(e.text):"";if(e.code!=="cancelled")st.textContent=errMsg(e.code);go.disabled=false;stop.hidden=true;return}
+    catch(e){out.textContent=e.text?cleanMd(e.text):"";out.hidden=!out.textContent;if(e.code!=="cancelled")st.textContent=errMsg(e.code);go.disabled=false;stop.hidden=true;return}
     go.disabled=false;stop.hidden=true;st.textContent="노트에 정리하는 중…";
     let meta={title:question.slice(0,40),summary:"",category:"문법"};
     try{const m=await sample.json(`아래 영어 학습 질문과 답변을 노트용으로 정리하세요.
